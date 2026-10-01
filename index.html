@@ -2,28 +2,748 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Dental Access Portal Prototype</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Dental Access Portal</title>
 <meta name="robots" content="noindex">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500&family=Public+Sans:wght@400;600;700&display=swap">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Public+Sans:wght@400;500;600;700&display=swap">
 <style>
-  :root { --bg: #FAFCFB; --ink: #0E1F1B; --deep: #0B4F46; --muted: #5C7370; --warn-bg: #FBF0E2; --warn-bd: #E3C593; --warn-ink: #6B4310; color-scheme: light; }
-  * { box-sizing: border-box; }
-  html, body { height: 100%; margin: 0; }
-  body { display: flex; flex-direction: column; background: var(--bg); color: var(--ink); font-family: 'Public Sans', -apple-system, system-ui, sans-serif; }
-  header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 24px; padding: 12px 16px; border-bottom: 1px solid #E3EDEA; }
-  h1 { font-family: 'Newsreader', Georgia, serif; font-weight: 500; font-size: 20px; margin: 0; color: var(--deep); }
-  .note { font-size: 13.5px; line-height: 1.45; color: var(--warn-ink); background: var(--warn-bg); border: 1px solid var(--warn-bd); border-radius: 999px; padding: 6px 14px; }
-  a { color: var(--deep); font-weight: 600; font-size: 14px; }
-  iframe { flex: 1; width: 100%; border: 0; display: block; }
+/* Layout: a patient-facing search site with two operator views (practice portal, freshness agent) sharing one in-memory dataset. */
+:root {
+  --bg: #FAFCFB; --surface: #FFFFFF; --sunk: #F2F6F5; --line: #E3EDEA; --line-strong: #C9DCD7;
+  --ink: #0E1F1B; --ink-2: #3F5551; --muted: #5C7370; --faint: #8C9E9A;
+  --brand: #0E6B5E; --brand-deep: #0B4F46; --brand-soft: #E9F5F1; --brand-line: #A9D6CB; --mint: #7FE3CF;
+  --panel: #0B4F46; --panel-2: #0E6157; --panel-ink: #FFFFFF; --panel-muted: #B6DDD6;
+  --warn: #A65B14; --warn-ink: #6B4310; --warn-bg: #FDF7EE; --warn-line: #F0DFC5; --warn-pill: #FBF0E2;
+  --bad: #8A2A2A; --bad-bg: #FBEAEA; --bad-line: #E4B8B8;
+  --serif: 'Newsreader', Georgia, 'Times New Roman', serif;
+  --sans: 'Public Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --radius: 16px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0F1A18; --surface: #16221F; --sunk: #121D1B; --line: #24342F; --line-strong: #345049;
+  --ink: #E6F0ED; --ink-2: #C2D3CE; --muted: #93AAA4; --faint: #6F8781;
+  --brand: #3FB7A2; --brand-deep: #8FD9CA; --brand-soft: #18332D; --brand-line: #2C5A50; --mint: #7FE3CF;
+  --panel: #0B3B35; --panel-2: #10473F; --panel-ink: #FFFFFF; --panel-muted: #A6D2C9;
+  --warn: #E2A45A; --warn-ink: #F0CC98; --warn-bg: #2A2116; --warn-line: #4A3820; --warn-pill: #33271A;
+  --bad: #F0A3A3; --bad-bg: #2E1A1A; --bad-line: #5A2E2E; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0F1A18; --surface: #16221F; --sunk: #121D1B; --line: #24342F; --line-strong: #345049;
+  --ink: #E6F0ED; --ink-2: #C2D3CE; --muted: #93AAA4; --faint: #6F8781;
+  --brand: #3FB7A2; --brand-deep: #8FD9CA; --brand-soft: #18332D; --brand-line: #2C5A50; --mint: #7FE3CF;
+  --panel: #0B3B35; --panel-2: #10473F; --panel-ink: #FFFFFF; --panel-muted: #A6D2C9;
+  --warn: #E2A45A; --warn-ink: #F0CC98; --warn-bg: #2A2116; --warn-line: #4A3820; --warn-pill: #33271A;
+  --bad: #F0A3A3; --bad-bg: #2E1A1A; --bad-line: #5A2E2E; color-scheme: dark; }
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 15px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+a { color: var(--brand); }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 3px solid var(--mint); outline-offset: 2px; border-radius: 6px; }
+.num { font-variant-numeric: tabular-nums; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 20px; }
+h1, h2, h3 { text-wrap: balance; }
+.serif { font-family: var(--serif); font-weight: 500; letter-spacing: -0.02em; }
+.eyebrow { font-size: 12.5px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); }
+
+.demo-bar { background: var(--warn-pill); color: var(--warn-ink); border-bottom: 1px solid var(--warn-line); font-size: 13px; }
+.demo-bar .wrap { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center; justify-content: space-between; padding-block: 7px; }
+.demo-bar button { background: none; border: 0; color: var(--warn-ink); text-decoration: underline; font-weight: 600; padding: 0; }
+
+.top { background: var(--surface); border-bottom: 1px solid var(--line); position: sticky; top: env(safe-area-inset-top, 0px); z-index: 10; }
+.top .wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-block: 12px; flex-wrap: wrap; }
+.logo { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--brand-deep); }
+.logo span { font-family: var(--serif); font-size: 20px; font-weight: 600; }
+nav.main { display: flex; flex-wrap: wrap; gap: 4px; }
+nav.main a { text-decoration: none; color: var(--muted); font-weight: 600; font-size: 14.5px; padding: 8px 12px; border-radius: 999px; }
+nav.main a[aria-current="page"] { background: var(--brand-soft); color: var(--brand-deep); }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border-radius: 12px; padding: 11px 20px; font-weight: 600; font-size: 15px; border: 1.5px solid transparent; text-decoration: none; }
+.btn-primary { background: var(--brand); color: #FFFFFF; }
+.btn-primary:hover { filter: brightness(1.07); }
+.btn-ghost { background: var(--surface); border-color: var(--line-strong); color: var(--brand-deep); }
+.btn-small { padding: 7px 13px; font-size: 13.5px; border-radius: 10px; }
+.chip { border: 1.5px solid var(--line-strong); background: var(--surface); color: var(--ink-2); border-radius: 999px; padding: 9px 17px; font-weight: 500; font-size: 14.5px; }
+.chip[aria-pressed="true"] { background: var(--brand); border-color: var(--brand); color: #FFFFFF; font-weight: 600; }
+.pill { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 5px 12px; font-size: 13px; font-weight: 700; white-space: nowrap; border: 1px solid; }
+.pill.ok { background: var(--brand-soft); border-color: var(--brand-line); color: var(--brand-deep); }
+.pill.warn { background: var(--warn-pill); border-color: var(--warn-line); color: var(--warn-ink); }
+.pill.bad { background: var(--bad-bg); border-color: var(--bad-line); color: var(--bad); }
+.pill.plain { background: var(--surface); border-color: var(--line); color: var(--muted); }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+.field label { display: block; font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 4px; }
+.input { width: 100%; border: 1.5px solid var(--line-strong); border-radius: 12px; padding: 10px 14px; background: var(--bg); font-size: 16px; }
+.seg { display: inline-flex; background: var(--sunk); border-radius: 10px; padding: 3px; gap: 2px; }
+.seg button { border: 0; background: transparent; color: var(--muted); font-size: 13px; font-weight: 500; padding: 6px 11px; border-radius: 8px; }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--brand-deep); font-weight: 700; box-shadow: 0 1px 2px rgba(11,79,70,.15); }
+.note { display: flex; gap: 10px; align-items: flex-start; background: var(--warn-bg); border: 1px solid var(--warn-line); color: var(--warn-ink); border-radius: 12px; padding: 12px 14px; font-size: 14px; }
+.toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 11px 18px; border-radius: 12px; font-weight: 600; font-size: 14px; z-index: 50; max-width: calc(100% - 32px); }
+main { padding-block: 32px 64px; }
+.footer { border-top: 1px solid var(--line); color: var(--faint); font-size: 13px; }
+.footer .wrap { padding-block: 20px; display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: space-between; }
+
+/* Home */
+.hero { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 32px; align-items: start; }
+.hero h1 { font-family: var(--serif); font-weight: 500; font-size: clamp(42px, 6vw, 70px); line-height: 1; letter-spacing: -0.025em; color: var(--brand-deep); margin: 0 0 18px; }
+.lede { font-size: 18px; color: var(--ink-2); max-width: 34em; margin: 0 0 28px; }
+.search { padding: 22px; box-shadow: 0 16px 44px rgba(11, 79, 70, 0.08); }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 20px; }
+.search-row { display: grid; grid-template-columns: minmax(0, 1fr) 150px auto; gap: 10px; align-items: end; }
+.trust { display: flex; flex-wrap: wrap; gap: 8px 22px; margin-top: 18px; font-size: 14px; color: var(--ink-2); }
+.trust span::before { content: "✓"; color: var(--brand); font-weight: 700; margin-right: 7px; }
+.price-panel { background: var(--panel); color: var(--panel-ink); border-radius: 24px; padding: 28px; }
+.price-panel .big { font-family: var(--serif); font-size: 54px; line-height: 1; font-weight: 500; letter-spacing: -0.02em; }
+.price-panel .sub { color: var(--panel-muted); font-size: 14.5px; margin: 6px 0 0; }
+.price-panel hr { border: 0; height: 1px; background: rgba(255,255,255,.14); margin: 22px 0; }
+.exempt { margin-top: 22px; background: var(--panel-2); border-radius: 12px; padding: 14px; font-size: 14px; color: var(--panel-muted); }
+.exempt a { color: var(--mint); }
+.steps3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 48px; }
+.steps3 .card { padding: 20px; }
+.steps3 h3 { margin: 6px 0 6px; font-size: 17px; }
+.steps3 p { margin: 0; color: var(--muted); font-size: 14.5px; }
+
+/* Results */
+.searchbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; margin-bottom: 24px; }
+.searchbar .field { min-width: 0; }
+.results { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 28px; align-items: start; }
+.filters { padding: 20px; display: flex; flex-direction: column; gap: 18px; }
+.check { display: flex; gap: 10px; align-items: center; font-size: 14.5px; color: var(--ink-2); }
+.check input { width: 18px; height: 18px; accent-color: var(--brand); }
+.res-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: 12px; margin-bottom: 16px; }
+.res-head h1 { font-family: var(--serif); font-weight: 500; font-size: 32px; margin: 0 0 4px; color: var(--brand-deep); letter-spacing: -0.02em; }
+.pcard { padding: 22px; display: flex; flex-direction: column; gap: 16px; }
+.pcard.unverified { border-color: var(--warn-line); }
+.pcard-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px 20px; }
+.pcard h2 { margin: 0 0 3px; font-size: 21px; letter-spacing: -0.01em; }
+.pcard h2 a { color: inherit; text-decoration: none; }
+.pcard h2 a:hover { text-decoration: underline; }
+.meta { font-size: 14px; color: var(--muted); }
+.cells { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+.cells > div { padding: 14px 16px; min-width: 0; }
+.cells > div + div { border-left: 1px solid var(--line); }
+.cells .v { font-family: var(--serif); font-size: 27px; font-weight: 500; letter-spacing: -0.02em; line-height: 1.1; margin-top: 4px; }
+.cells .v.dim { color: var(--faint); }
+.cells .pill { white-space: normal; }
+.cells .s { font-size: 13px; color: var(--muted); margin-top: 3px; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
+.actions .left { display: flex; flex-wrap: wrap; gap: 8px; }
+.list { display: flex; flex-direction: column; gap: 14px; }
+
+/* Practice */
+.detail { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 28px; align-items: start; }
+.evidence { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.evidence .card { padding: 14px 16px; }
+.evidence b { display: block; font-size: 14px; margin-bottom: 4px; }
+.evidence p { margin: 0; font-size: 14px; color: var(--muted); }
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 14.5px; }
+th { text-align: left; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding: 11px 14px; background: var(--sunk); border-bottom: 1px solid var(--line); white-space: nowrap; }
+td { padding: 12px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+tr:last-child td { border-bottom: 0; }
+td.money { font-weight: 700; white-space: nowrap; }
+.enquire { padding: 22px; position: sticky; top: 90px; }
+.enquire form { display: flex; flex-direction: column; gap: 12px; }
+
+/* Empty */
+.empty { display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: 36px; align-items: start; }
+.empty h1 { font-family: var(--serif); font-weight: 500; font-size: clamp(34px, 4.6vw, 52px); line-height: 1.05; color: var(--brand-deep); margin: 14px 0; letter-spacing: -0.025em; }
+.option { display: flex; gap: 14px; align-items: center; padding: 16px 18px; text-align: left; width: 100%; border: 1px solid var(--line); background: var(--surface); border-radius: 14px; }
+.option b { display: block; font-size: 16px; }
+.option span { color: var(--muted); font-size: 14px; }
+.watch { background: var(--panel); color: var(--panel-ink); border-radius: 24px; padding: 28px; }
+.watch p { color: var(--panel-muted); }
+.watch .input { background: #FFFFFF; color: #0E1F1B; border-color: transparent; }
+
+/* Console (portal + agent) */
+.console { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 24px; align-items: start; }
+.side { background: var(--panel); color: var(--panel-ink); border-radius: var(--radius); padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+.side .who { background: var(--panel-2); border-radius: 12px; padding: 12px; font-size: 14px; }
+.side .who small { display: block; color: var(--panel-muted); font-size: 12px; }
+.side button.tab { background: transparent; border: 0; color: var(--panel-muted); text-align: left; padding: 9px 12px; border-radius: 10px; font-weight: 500; width: 100%; display: flex; justify-content: space-between; }
+.side button.tab[aria-pressed="true"] { background: var(--panel-2); color: var(--panel-ink); font-weight: 700; }
+.side .badge { background: var(--mint); color: #06302B; border-radius: 999px; font-size: 12px; font-weight: 700; padding: 1px 8px; }
+.stat { display: flex; justify-content: space-between; font-size: 13.5px; color: var(--panel-muted); }
+.stat b { color: var(--panel-ink); }
+.console h1 { font-family: var(--serif); font-weight: 500; font-size: 34px; margin: 0 0 6px; color: var(--brand-deep); letter-spacing: -0.02em; }
+.cols { display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 20px; align-items: start; }
+.stack { display: flex; flex-direction: column; gap: 16px; }
+.pad { padding: 20px; }
+.price-input { width: 96px; border: 1.5px solid var(--line-strong); border-radius: 9px; padding: 6px 9px; background: var(--bg); font-weight: 700; }
+.changed td { background: var(--warn-bg); }
+.timeline { display: flex; flex-direction: column; }
+.tl { display: grid; grid-template-columns: 88px 14px minmax(0, 1fr); gap: 12px; }
+.tl .when { font-size: 13px; color: var(--muted); text-align: right; font-weight: 600; }
+.tl .dot { display: flex; flex-direction: column; align-items: center; padding-top: 5px; }
+.tl .dot i { width: 10px; height: 10px; border-radius: 50%; background: var(--brand); display: block; flex-shrink: 0; }
+.tl .dot i.next { background: var(--surface); border: 2px solid var(--line-strong); }
+.tl .dot u { width: 1.5px; flex: 1; background: var(--line); margin-top: 4px; }
+.tl .body { padding-bottom: 14px; }
+.tl .body b { font-size: 14.5px; }
+.tl .body p { margin: 2px 0 0; font-size: 13.5px; color: var(--muted); }
+.mail { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.mail .hd { background: var(--sunk); padding: 10px 14px; border-bottom: 1px solid var(--line); font-size: 13px; color: var(--muted); }
+.mail .hd b { display: block; color: var(--ink); font-size: 14.5px; }
+.mail .bd { padding: 14px; font-size: 14px; color: var(--ink-2); display: flex; flex-direction: column; gap: 8px; }
+.rule { display: flex; flex-direction: column; gap: 6px; }
+.rule .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.rule input { width: 64px; text-align: center; border: 1.5px solid var(--line-strong); border-radius: 10px; padding: 6px; background: var(--bg); font-weight: 700; }
+.log { font-size: 13.5px; color: var(--ink-2); display: flex; flex-direction: column; gap: 6px; max-height: 220px; overflow-y: auto; }
+
+@media (max-width: 960px) {
+  .hero, .results, .detail, .empty, .console, .cols { grid-template-columns: minmax(0, 1fr); }
+  .enquire { position: static; }
+  .steps3, .evidence { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 620px) {
+  .search-row { grid-template-columns: minmax(0, 1fr); }
+  .cells { grid-template-columns: minmax(0, 1fr); }
+  .cells > div + div { border-left: 0; border-top: 1px solid var(--line); }
+  nav.main a { padding: 6px 9px; font-size: 13.5px; }
+}
+@media (prefers-reduced-motion: no-preference) { .fade { animation: fade .25s ease-out; } @keyframes fade { from { opacity: .4; transform: translateY(4px); } to { opacity: 1; transform: none; } } }
 </style>
 </head>
 <body>
-<header>
-  <h1>Dental Access Portal &middot; design prototype</h1>
-  <span class="note">Not an NHS service. Practices, prices and counts are sample data for design review.</span>
-  <a href="canvas.html" target="_blank" rel="noopener">Open full screen</a>
-</header>
-<iframe src="canvas.html" title="Dental Access Portal design canvas"></iframe>
+<div class="demo-bar"><div class="wrap">
+  <span><b>Demo.</b> Not an NHS service. Every practice, price and count is fictional, for showing how the portal works.</span>
+  <button type="button" id="reset">Reset demo</button>
+</div></div>
+
+<header class="top"><div class="wrap">
+  <a class="logo" href="#home" aria-label="Dental Access Portal home">
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>
+    <span>Dental Access Portal</span>
+  </a>
+  <nav class="main" aria-label="Main">
+    <a href="#home" data-nav="home">Find a dentist</a>
+    <a href="#how" data-nav="how">How it works</a>
+    <a href="#portal" data-nav="portal">For practices</a>
+    <a href="#agent" data-nav="agent">Freshness agent</a>
+  </nav>
+</div></header>
+
+<main><div class="wrap" id="view"></div></main>
+
+<footer class="footer"><div class="wrap">
+  <span>Dental Access Portal &middot; a demo by Adele Care Limited</span>
+  <span>NHS band charges shown are England 2026/27 figures used in the design.</span>
+</div></footer>
+
+<script>
+(() => {
+  const TODAY = new Date('2026-10-01T09:00:00');
+  const DAY = 86400000;
+  const d = (s) => new Date(s + 'T09:00:00');
+  const daysAgo = (date) => Math.round((TODAY - date) / DAY);
+  const fmt = (date, year) => date.toLocaleDateString('en-GB', year ? { day: 'numeric', month: 'short', year: 'numeric' } : { day: 'numeric', month: 'short' });
+  const money = (n) => '£' + (Number.isInteger(n) ? n : n.toFixed(2));
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+  const TREATMENTS = [
+    { id: 'checkup', label: 'Check-up', nhs: 27.90, band: 'Band 1', bandNote: 'Band 1: examination, X-rays, scale and polish if needed.' },
+    { id: 'filling', label: 'Filling', nhs: 76.60, band: 'Band 2', bandNote: 'Band 2: everything in Band 1 plus fillings.' },
+    { id: 'extraction', label: 'Extraction', nhs: 76.60, band: 'Band 2', bandNote: 'Band 2: one charge however many teeth are taken out.' },
+    { id: 'crown', label: 'Crown', nhs: 332.10, band: 'Band 3', bandNote: 'Band 3: one charge covering the whole course of treatment.' },
+    { id: 'urgent', label: 'In pain today', nhs: 27.90, band: 'Urgent', bandNote: 'Urgent care: one charge, whether or not you are registered anywhere.' },
+    { id: 'hygienist', label: 'Hygienist', nhs: null, band: 'Outside NHS', bandNote: 'Routine hygienist visits sit outside NHS banding.' },
+    { id: 'aligners', label: 'Aligners', nhs: null, band: 'Private', bandNote: 'Clear aligners for cosmetic straightening are not available on the NHS.' },
+    { id: 'implant', label: 'Implant', nhs: null, band: 'Private', bandNote: 'Implants are very rarely available on the NHS.' }
+  ];
+  const tById = (id) => TREATMENTS.find((t) => t.id === id);
+
+  const SEED = () => ({
+    practices: [
+      { id: 'kingfisher', name: 'Kingfisher Dental Care', street: 'Barton Road', area: 'Worsley', pc: 'M28 2', miles: 0.6, travel: '9 min by bus', ods: 'V10•••1', nhsAdults: false, nhsConfirmed: d('2026-09-12'), practiceConfirmed: d('2026-09-25'), patientConfirmed: d('2026-09-28'), patientsGot: '7 of 8', urgentToday: true, plan: true, finance: true, hours: 'Mon–Thu 8am–6pm, Fri 8am–4pm. Late until 8pm on Wednesdays.', access: 'Step-free, ground-floor surgery, free parking', langs: 'English, Urdu, Polish', published: d('2026-09-02'),
+        prices: { checkup: [42, 'Full examination and two X-rays'], filling: [140, 'Composite, from one surface'], extraction: [155, 'Simple extraction'], crown: [495, 'Consultation, X-rays, fitting and one review'], urgent: [95, 'Assessment and pain relief'], hygienist: [58, '30 minutes'], aligners: [2950, 'Both arches, retainers included'], implant: [2400, 'Single implant and crown'] } },
+      { id: 'larkhill', name: 'Larkhill Dental Studio', street: 'Greenleach Lane', area: 'Worsley', pc: 'M28 2', miles: 1.3, travel: '6 min drive', ods: 'V10•••2', nhsAdults: false, nhsConfirmed: d('2026-08-02'), practiceConfirmed: null, patientConfirmed: d('2026-09-27'), patientsGot: '3 of 5', urgentToday: false, plan: true, finance: true, hours: 'Mon–Fri 9am–5:30pm, Sat 9am–1pm.', access: 'Step-free, street parking', langs: 'English', published: d('2026-08-28'),
+        prices: { checkup: [55, 'Examination; X-rays £15 extra'], filling: [165, 'Composite'], extraction: [180, 'Simple extraction'], crown: [560, 'Fitting only; consultation £45 extra'], urgent: [120, 'Emergency appointment'], hygienist: [65, '30 minutes'], aligners: [3200, 'Both arches'], implant: [2650, 'Single implant and crown'] } },
+      { id: 'millbrow', name: 'Mill Brow Dental', street: 'Bolton Road', area: 'Walkden', pc: 'M28 3', miles: 3.6, travel: '14 min by bus', ods: 'V10•••3', nhsAdults: true, nhsConfirmed: d('2026-09-20'), practiceConfirmed: d('2026-09-30'), patientConfirmed: null, patientsGot: '4 of 6', urgentToday: true, plan: false, finance: false, hours: 'Mon–Fri 8:30am–5pm.', access: 'Step-free', langs: 'English, Arabic', published: d('2026-09-10'),
+        prices: { checkup: [38, 'Examination and X-rays'], filling: [110, 'Composite'], extraction: [130, 'Simple extraction'], crown: [470, 'Consultation, X-rays and fitting'], urgent: [75, 'Emergency appointment'], hygienist: [48, '30 minutes'] } },
+      { id: 'ashgrove', name: 'Ashgrove Family Dental', street: 'Monton Road', area: 'Eccles', pc: 'M30 9', miles: 2.9, travel: '14 min drive', ods: 'V10•••4', nhsAdults: true, nhsConfirmed: d('2026-06-14'), practiceConfirmed: null, patientConfirmed: null, patientsGot: null, urgentToday: false, plan: false, finance: false, hours: 'Mon–Fri 9am–5pm.', access: 'Two steps at entrance', langs: 'English', published: null, prices: {}, requestedOn: d('2026-09-29') },
+      { id: 'bramble', name: 'Bramble Lane Dental', street: 'Chorley Road', area: 'Swinton', pc: 'M27 4', miles: 3.4, travel: '16 min drive', ods: 'V10•••5', nhsAdults: false, nhsConfirmed: d('2026-09-01'), practiceConfirmed: d('2026-09-15'), patientConfirmed: null, patientsGot: null, urgentToday: true, plan: true, finance: true, hours: 'Mon–Sat 8am–7pm.', access: 'Step-free, lift, parking', langs: 'English, Gujarati', published: d('2026-09-15'),
+        prices: { checkup: [39, 'Examination and two X-rays'], filling: [125, 'Composite'], extraction: [140, 'Simple extraction'], crown: [520, 'Includes consultation and X-rays'], urgent: [85, 'Same-day emergency appointment'], hygienist: [52, '30 minutes'], aligners: [2750, 'Both arches, retainers included'], implant: [2300, 'Single implant and crown'] } },
+      { id: 'copperbeech', name: 'Copperbeech Dental', street: 'Manchester Road', area: 'Little Hulton', pc: 'M38 9', miles: 4.2, travel: '19 min by bus', ods: 'V10•••6', nhsAdults: true, nhsConfirmed: d('2026-01-21'), practiceConfirmed: null, patientConfirmed: null, patientsGot: null, urgentToday: false, plan: false, finance: false, hours: 'Mon–Fri 9am–5pm.', access: 'Step-free', langs: 'English', published: null, prices: {}, requestedOn: d('2026-09-17') },
+      { id: 'heronsgate', name: 'Heronsgate Dental Practice', street: 'Market Street', area: 'Farnworth', pc: 'BL4 7', miles: 4.8, travel: '21 min drive', ods: 'V10•••7', nhsAdults: true, nhsConfirmed: d('2026-09-24'), practiceConfirmed: d('2026-09-24'), patientConfirmed: d('2026-09-29'), patientsGot: '5 of 5', urgentToday: false, plan: true, finance: false, hours: 'Mon–Fri 8am–6pm.', access: 'Step-free, parking', langs: 'English, Bengali', published: d('2026-09-24'),
+        prices: { checkup: [36, 'Examination and X-rays'], filling: [105, 'Composite'], extraction: [120, 'Simple extraction'], crown: [450, 'Consultation, X-rays, fitting'], urgent: [70, 'Emergency appointment'], hygienist: [45, '30 minutes'] } },
+      { id: 'willowmere', name: 'Willowmere Dental', street: 'Bury Old Road', area: 'Prestwich', pc: 'M25 1', miles: 7.6, travel: '28 min drive', ods: 'V10•••8', nhsAdults: true, nhsConfirmed: d('2026-09-18'), practiceConfirmed: d('2026-09-26'), patientConfirmed: null, patientsGot: '2 of 3', urgentToday: true, plan: true, finance: true, hours: 'Mon–Fri 8am–8pm, Sat 9am–2pm.', access: 'Step-free, parking', langs: 'English, Hebrew', published: d('2026-09-26'),
+        prices: { checkup: [45, 'Examination and X-rays'], filling: [150, 'Composite'], extraction: [160, 'Simple extraction'], crown: [610, 'Includes consultation and review'], urgent: [110, 'Emergency appointment'], hygienist: [60, '30 minutes'], aligners: [3400, 'Both arches'], implant: [2800, 'Single implant and crown'] } },
+      { id: 'radcliffe', name: 'The Dental Practice', street: '27 Spring Lane', area: 'Radcliffe', pc: 'M26 2', miles: 8.9, travel: '30 min drive', ods: 'V009201', real: true, nhsAdults: true, nhsConfirmed: d('2026-03-04'), practiceConfirmed: null, patientConfirmed: null, patientsGot: null, urgentToday: false, plan: false, finance: false, hours: 'See the practice’s NHS profile.', access: 'See the practice’s NHS profile.', langs: '', published: null, prices: {} }
+    ],
+    rules: { ask: [30, 'days'], remind: [3, 'days'], unverified: [3, 'months'], escalate: [1, 'weeks'] },
+    log: [
+      { at: d('2026-09-29'), text: 'Asked Ashgrove Family Dental to confirm. NHS profile last confirmed 14 Jun.' },
+      { at: d('2026-09-17'), text: 'Asked Copperbeech Dental to confirm. NHS profile last confirmed 21 Jan.' }
+    ],
+    enquiries: [
+      { at: d('2026-09-30'), practice: 'kingfisher', name: 'A. Patel', treatment: 'crown', when: 'Evenings', status: 'Booked' },
+      { at: d('2026-09-29'), practice: 'kingfisher', name: 'J. Kowalski', treatment: 'checkup', when: 'Saturdays', status: 'New' },
+      { at: d('2026-09-28'), practice: 'kingfisher', name: 'S. Hussain', treatment: 'aligners', when: 'Weekday mornings', status: 'Started treatment' }
+    ],
+    alerts: 412,
+    draft: {},
+    pending: null,
+    search: { treatment: 'crown', postcode: 'M28 3', radius: 5, nhsOnly: false, recent: false, urgent: false, plan: false, maxPrice: null, sort: 'confirmed' },
+    portalTab: 'prices',
+    lastRun: null
+  });
+
+  let S = SEED();
+  const view = document.getElementById('view');
+  let toastTimer;
+  function toast(msg) {
+    document.querySelector('.toast')?.remove();
+    const t = document.createElement('div'); t.className = 'toast'; t.setAttribute('role', 'status'); t.textContent = msg;
+    document.body.appendChild(t); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.remove(), 3200);
+  }
+
+  // ---------- Freshness logic ----------
+  const UNIT = { days: 1, weeks: 7, months: 30 };
+  const ruleDays = (k) => S.rules[k][0] * UNIT[S.rules[k][1]];
+  const latest = (...ds) => ds.filter(Boolean).sort((a, b) => b - a)[0] || null;
+  function freshness(p) {
+    const lastConfirmed = latest(p.nhsConfirmed, p.practiceConfirmed);
+    const age = daysAgo(lastConfirmed);
+    const best = latest(p.practiceConfirmed, p.patientConfirmed);
+    let badge;
+    if (p.practiceConfirmed && daysAgo(p.practiceConfirmed) <= ruleDays('unverified')) badge = { kind: 'ok', text: 'Practice confirmed · ' + fmt(p.practiceConfirmed) };
+    else if (p.patientConfirmed && daysAgo(p.patientConfirmed) <= ruleDays('unverified')) badge = { kind: 'ok', text: 'Patient confirmed · ' + fmt(p.patientConfirmed) };
+    else if (age <= ruleDays('unverified')) badge = { kind: 'plain', text: 'NHS profile · confirmed ' + fmt(p.nhsConfirmed) };
+    else badge = { kind: 'warn', text: 'Unverified · NHS profile only' };
+    let status;
+    const replied = p.practiceConfirmed && (!p.requestedOn || p.practiceConfirmed >= p.requestedOn);
+    if (p.requestedOn && !replied) {
+      const waited = daysAgo(p.requestedOn);
+      if (waited >= ruleDays('escalate')) status = { kind: 'bad', text: 'With listings team' };
+      else if (waited >= ruleDays('remind')) status = { kind: 'warn', text: 'Reminder sent' };
+      else status = { kind: 'warn', text: 'Asked ' + fmt(p.requestedOn) };
+    } else if (age >= ruleDays('ask')) status = { kind: 'warn', text: 'Due: ask practice' };
+    else if (replied && p.practiceConfirmed) status = { kind: 'ok', text: 'Confirmed by practice' };
+    else status = { kind: 'ok', text: 'Fresh' };
+    return { lastConfirmed, age, best, badge, status, stale: age > ruleDays('unverified') };
+  }
+  function runAgent() {
+    let asked = 0;
+    S.practices.forEach((p) => {
+      const f = freshness(p);
+      const pending = p.requestedOn && !(p.practiceConfirmed && p.practiceConfirmed >= p.requestedOn);
+      if (f.age >= ruleDays('ask') && !pending) {
+        p.requestedOn = new Date(TODAY);
+        S.log.unshift({ at: new Date(TODAY), text: 'Asked ' + p.name + ' to confirm. NHS profile last confirmed ' + fmt(f.lastConfirmed, true) + ' (' + f.age + ' days ago).' });
+        asked++;
+      }
+    });
+    S.lastRun = new Date(TODAY);
+    return asked;
+  }
+  function practiceReply(p, answer) {
+    p.practiceConfirmed = new Date(TODAY);
+    if (answer === 'yes') p.nhsAdults = true;
+    if (answer === 'no') p.nhsAdults = false;
+    S.log.unshift({ at: new Date(TODAY), text: p.name + ' replied: ' + (answer === 'yes' ? 'taking new NHS adults.' : answer === 'no' ? 'not taking new NHS adults.' : 'updating its details.') + ' Listing updated for patients.' });
+  }
+
+  // ---------- Shared bits ----------
+  const pill = (kind, text) => `<span class="pill ${kind}">${esc(text)}</span>`;
+  const treatmentChips = (cur, attr) => TREATMENTS.map((t) => `<button type="button" class="chip" ${attr}="${t.id}" aria-pressed="${t.id === cur}">${esc(t.label)}</button>`).join('');
+  function privateRange(tid, list) {
+    const vals = list.map((p) => p.prices[tid]?.[0]).filter((v) => v != null);
+    if (!vals.length) return null;
+    return { min: Math.min(...vals), max: Math.max(...vals), n: vals.length };
+  }
+
+  // ---------- Views ----------
+  function home() {
+    const t = tById(S.search.treatment);
+    const r = privateRange(t.id, S.practices.filter((p) => p.miles <= 10));
+    view.innerHTML = `
+      <section class="hero fade">
+        <div>
+          <span class="pill ok" style="margin-bottom:18px">Availability and price, in one search</span>
+          <h1>See who can see you, and what it costs.</h1>
+          <p class="lede">NHS charges are public. Private prices usually are not. Pick a treatment and a postcode and we show both, side by side, for practices near you.</p>
+          <form class="card search" id="search-form">
+            <div class="eyebrow">What do you need?</div>
+            <div class="chips" role="group" aria-label="Treatment">${treatmentChips(t.id, 'data-t')}</div>
+            <div class="search-row">
+              <div class="field"><label for="pc">Postcode</label><input class="input" id="pc" name="pc" value="${esc(S.search.postcode)}" autocomplete="postal-code" required></div>
+              <div class="field"><label for="radius">Within</label><select class="input" id="radius">${[3, 5, 10].map((m) => `<option value="${m}" ${m === S.search.radius ? 'selected' : ''}>${m} miles</option>`).join('')}</select></div>
+              <button class="btn btn-primary" type="submit">Show prices</button>
+            </div>
+          </form>
+          <div class="trust"><span>Practice-published prices, dated</span><span>Reviewed by a dentist against GDC guidance</span><span>CQC-registered practices only</span></div>
+        </div>
+        <aside class="price-panel" aria-live="polite">
+          <div class="eyebrow" style="color:var(--panel-muted)">${esc(t.label)}: what you would pay</div>
+          <div style="margin-top:16px"><span class="big num">${t.nhs != null ? money(t.nhs) : 'Not on the NHS'}</span> ${t.nhs != null ? '<span style="color:var(--panel-muted)">on the NHS</span>' : ''}</div>
+          <p class="sub">${esc(t.bandNote)}</p>
+          <hr>
+          <div class="big num" style="color:var(--mint)">${r ? money(r.min) + '–' + money(r.max) : 'No prices yet'}</div>
+          <p class="sub">${r ? `Private range across ${r.n} practices within 10 miles that publish this price.` : 'No nearby practice publishes this price yet.'}</p>
+          ${t.nhs != null ? '<div class="exempt">You may pay nothing at all if you are under 18, pregnant or on qualifying benefits. <a href="https://www.nhs.uk/nhs-services/dentists/dental-costs/get-help-with-dental-costs/" target="_blank" rel="noopener">Check if you are exempt</a>.</div>' : ''}
+        </aside>
+      </section>
+      <section class="steps3">
+        <div class="card"><div class="eyebrow">For patients</div><h3>Free to search</h3><p>No account. Enquiries go straight to the practice, and your details are never sold or used for advertising.</p></div>
+        <div class="card"><div class="eyebrow">Availability</div><h3>Dated, not guessed</h3><p>Every “taking new patients” shows who confirmed it and when. Stale listings are flagged, and our agent asks the practice to confirm.</p></div>
+        <div class="card"><div class="eyebrow">For practices</div><h3>Free to list</h3><p>Practices pay a referral fee only when a patient we sent starts high-value treatment. Fees never change the order of results.</p></div>
+      </section>`;
+    view.querySelectorAll('[data-t]').forEach((b) => b.onclick = () => { S.search.treatment = b.dataset.t; home(); });
+    view.querySelector('#search-form').onsubmit = (e) => {
+      e.preventDefault();
+      S.search.postcode = view.querySelector('#pc').value.trim().toUpperCase() || 'M28 3';
+      S.search.radius = Number(view.querySelector('#radius').value);
+      location.hash = 'results';
+    };
+  }
+
+  function filtered() {
+    const s = S.search, t = tById(s.treatment);
+    let list = S.practices.filter((p) => p.miles <= s.radius);
+    const total = list.length;
+    if (s.nhsOnly) list = list.filter((p) => p.nhsAdults && !freshness(p).stale);
+    if (s.recent) list = list.filter((p) => { const b = freshness(p).best; return b && daysAgo(b) <= 14; });
+    if (s.urgent) list = list.filter((p) => p.urgentToday);
+    if (s.plan) list = list.filter((p) => p.plan);
+    if (s.maxPrice != null) list = list.filter((p) => p.prices[t.id] && p.prices[t.id][0] <= s.maxPrice);
+    const sorters = {
+      confirmed: (a, b) => (latest(freshness(b).best, freshness(b).lastConfirmed) - latest(freshness(a).best, freshness(a).lastConfirmed)) || a.miles - b.miles,
+      distance: (a, b) => a.miles - b.miles,
+      price: (a, b) => (a.prices[t.id]?.[0] ?? 1e9) - (b.prices[t.id]?.[0] ?? 1e9)
+    };
+    list.sort(sorters[s.sort]);
+    return { list, total };
+  }
+
+  function practiceCard(p, t) {
+    const f = freshness(p);
+    const pr = p.prices[t.id];
+    const nhsCovered = t.nhs != null;
+    let nhsCell;
+    if (!nhsCovered) nhsCell = `<div class="v dim">Not on NHS</div><div class="s">${esc(t.band)}</div>`;
+    else if (p.nhsAdults && !f.stale) nhsCell = `<div class="v num">${money(t.nhs)}</div><div class="s">${esc(t.band)}${t.id === 'urgent' ? '' : ', whole course'}</div>`;
+    else if (p.nhsAdults) nhsCell = `<div class="v num">${money(t.nhs)}</div><div class="s" style="color:var(--warn);font-weight:600">If they are still taking patients</div>`;
+    else nhsCell = `<div class="v dim">—</div><div class="s">Not taking new NHS adults</div>`;
+    const priceCell = pr ? `<div class="v num">${money(pr[0])}</div><div class="s">Published ${fmt(p.published, true)}</div>` : `<div class="v dim">Not published</div><div class="s">No price list on file</div>`;
+    const incl = pr ? esc(pr[1]) : '<span style="color:var(--faint)">Unknown until they publish</span>';
+    const stale = f.badge.kind === 'warn';
+    const asked = p.requestedOn && !(p.practiceConfirmed && p.practiceConfirmed >= p.requestedOn);
+    return `<article class="card pcard ${stale ? 'unverified' : ''}">
+      <div class="pcard-head">
+        <div><h2><a href="#practice-${p.id}">${esc(p.name)}</a></h2><div class="meta">${esc(p.street)}, ${esc(p.area)} ${esc(p.pc)} &middot; ${p.miles} miles &middot; ${esc(p.travel)}</div></div>
+        <div>${pill(f.badge.kind, f.badge.text)}</div>
+      </div>
+      ${stale ? `<div class="note"><span aria-hidden="true">!</span><div>The NHS profile says this practice is ${p.nhsAdults ? 'accepting new adults' : 'not accepting new adults'}, but it was last confirmed on <b>${fmt(f.lastConfirmed, true)}</b>, ${f.age} days ago. ${asked ? 'We asked the practice to confirm on ' + fmt(p.requestedOn) + '.' : ''} Ring before you travel, and tell us how you got on.</div></div>` : ''}
+      <div class="cells">
+        <div><div class="eyebrow">On the NHS</div>${nhsCell}</div>
+        <div><div class="eyebrow">Private here</div>${priceCell}</div>
+        <div><div class="eyebrow">Included</div><div style="font-size:14px;color:var(--ink-2);margin-top:6px">${incl}</div></div>
+      </div>
+      <div class="actions">
+        <div class="left">
+          <a class="btn btn-primary btn-small" href="#practice-${p.id}">${pr || p.nhsAdults ? 'Enquire' : 'View practice'}</a>
+          <a class="btn btn-ghost btn-small" href="#practice-${p.id}">Full price list</a>
+          ${!p.nhsAdults && nhsCovered ? `<button class="btn btn-ghost btn-small" type="button" data-notify="${p.id}">Tell me when they open to NHS</button>` : ''}
+          ${!p.published ? `<button class="btn btn-ghost btn-small" type="button" data-askprices="${p.id}">Ask them to publish prices</button>` : ''}
+        </div>
+        <span class="meta">${p.patientsGot ? esc(p.patientsGot) + ' people who enquired this month got an appointment' : 'NHS profile read today at 06:00'}</span>
+      </div>
+    </article>`;
+  }
+
+  function results() {
+    const s = S.search, t = tById(s.treatment);
+    const { list, total } = filtered();
+    const maxPrices = S.practices.map((p) => p.prices[t.id]?.[0]).filter(Boolean);
+    const hi = maxPrices.length ? Math.ceil(Math.max(...maxPrices) / 10) * 10 : 0;
+    const cur = s.maxPrice ?? hi;
+    if (!list.length && s.nhsOnly) return empty(total);
+    view.innerHTML = `
+      <form class="searchbar fade" id="sb">
+        <div class="field"><label for="sb-pc">Postcode</label><input class="input" id="sb-pc" value="${esc(s.postcode)}" style="width:130px"></div>
+        <div class="field"><label for="sb-t">Treatment</label><select class="input" id="sb-t">${TREATMENTS.map((x) => `<option value="${x.id}" ${x.id === t.id ? 'selected' : ''}>${esc(x.label)}</option>`).join('')}</select></div>
+        <div class="field"><label for="sb-r">Within</label><select class="input" id="sb-r">${[3, 5, 10].map((m) => `<option value="${m}" ${m === s.radius ? 'selected' : ''}>${m} miles</option>`).join('')}</select></div>
+        <button class="btn btn-primary" type="submit">Update</button>
+      </form>
+      <div class="results">
+        <aside class="card filters" aria-label="Filters">
+          <div class="eyebrow">Filter</div>
+          <div><div style="font-weight:600;margin-bottom:8px">Availability</div>
+            <label class="check"><input type="checkbox" id="f-nhs" ${s.nhsOnly ? 'checked' : ''}> Taking new NHS adults</label>
+            <label class="check"><input type="checkbox" id="f-recent" ${s.recent ? 'checked' : ''}> Confirmed in last 14 days</label>
+            <label class="check"><input type="checkbox" id="f-urgent" ${s.urgent ? 'checked' : ''}> Urgent slots today</label></div>
+          ${hi ? `<div><div style="display:flex;justify-content:space-between;font-weight:600;margin-bottom:6px"><label for="f-max">Private price up to</label><span class="num" style="color:var(--brand)" id="f-max-v">${money(cur)}</span></div>
+            <input type="range" id="f-max" min="${Math.floor(Math.min(...maxPrices) / 10) * 10}" max="${hi}" step="5" value="${cur}" style="width:100%;accent-color:var(--brand)"></div>` : ''}
+          <div><div style="font-weight:600;margin-bottom:8px">Paying</div><label class="check"><input type="checkbox" id="f-plan" ${s.plan ? 'checked' : ''}> Offers a payment plan</label></div>
+        </aside>
+        <section>
+          <div class="res-head">
+            <div><h1>${esc(t.label)}: ${list.length} of ${total} practices within ${s.radius} miles</h1>
+              <div class="meta">${t.nhs != null ? `On the NHS this is <b style="color:var(--ink)">${money(t.nhs)}</b> wherever you go. ` : `${esc(t.bandNote)} `}Private prices are what each practice published.</div></div>
+            <div class="field"><label for="sort">Sort</label><select class="input" id="sort" style="width:auto">
+              <option value="confirmed" ${s.sort === 'confirmed' ? 'selected' : ''}>Most recently confirmed</option>
+              <option value="distance" ${s.sort === 'distance' ? 'selected' : ''}>Nearest</option>
+              <option value="price" ${s.sort === 'price' ? 'selected' : ''}>Lowest private price</option></select></div>
+          </div>
+          <div class="list">${list.length ? list.map((p) => practiceCard(p, t)).join('') : '<div class="card pad">No practices match these filters. Try a higher price or a wider radius.</div>'}</div>
+          <p class="meta" style="margin-top:16px">Ordered only by what you choose above. Referral fees never change the order.</p>
+        </section>
+      </div>`;
+    view.querySelector('#sb').onsubmit = (e) => { e.preventDefault(); s.postcode = view.querySelector('#sb-pc').value.trim().toUpperCase() || s.postcode; s.treatment = view.querySelector('#sb-t').value; s.radius = Number(view.querySelector('#sb-r').value); s.maxPrice = null; results(); };
+    const bind = (id, key) => { const el = view.querySelector(id); if (el) el.onchange = () => { s[key] = el.checked; results(); }; };
+    bind('#f-nhs', 'nhsOnly'); bind('#f-recent', 'recent'); bind('#f-urgent', 'urgent'); bind('#f-plan', 'plan');
+    const r = view.querySelector('#f-max');
+    if (r) { r.oninput = () => { view.querySelector('#f-max-v').textContent = money(Number(r.value)); }; r.onchange = () => { s.maxPrice = Number(r.value); results(); }; }
+    view.querySelector('#sort').onchange = (e) => { s.sort = e.target.value; results(); };
+    view.querySelectorAll('[data-notify]').forEach((b) => b.onclick = () => { S.alerts++; b.disabled = true; b.textContent = 'We will tell you'; toast('Alert set. We will tell you when they open to NHS adults.'); });
+    view.querySelectorAll('[data-askprices]').forEach((b) => b.onclick = () => { b.disabled = true; b.textContent = 'Request sent'; toast('Thanks. We have asked the practice to publish its prices.'); });
+  }
+
+  function empty(total) {
+    const s = S.search, t = tById(s.treatment);
+    const wider = S.practices.filter((p) => p.miles <= 10 && p.miles > s.radius && p.nhsAdults && !freshness(p).stale);
+    const cheap = S.practices.filter((p) => p.miles <= 10 && p.prices.checkup && p.prices.checkup[0] <= 40);
+    view.innerHTML = `
+      <div class="empty fade">
+        <div>
+          ${pill('warn', `0 of ${total} practices open to new NHS adults`)}
+          <h1>Nothing within ${s.radius} miles is open on the NHS today.</h1>
+          <p class="lede">We checked every practice within ${s.radius} miles of ${esc(s.postcode)}. We would rather tell you that than send you round ringing them.</p>
+          <div class="eyebrow" style="margin-bottom:12px">What you can do now</div>
+          <div class="list">
+            ${s.radius < 10 ? `<button class="option" type="button" id="widen"><div style="flex:1"><b>Widen to 10 miles</b><span>${wider.length} practice${wider.length === 1 ? ' is' : 's are'} confirmed as taking new NHS adults</span></div><span aria-hidden="true">›</span></button>` : ''}
+            <button class="option" type="button" id="private"><div style="flex:1"><b>Private check-ups close to NHS prices</b><span>${cheap.length} practice${cheap.length === 1 ? '' : 's'} within 10 miles offer a check-up for £40 or less</span></div><span aria-hidden="true">›</span></button>
+            <button class="option" type="button" id="urgent" style="background:var(--warn-bg);border-color:var(--warn-line)"><div style="flex:1"><b style="color:var(--warn-ink)">In pain right now?</b><span>Urgent NHS care is £27.90 whether or not you are registered anywhere. You can also call NHS 111.</span></div><span aria-hidden="true">›</span></button>
+          </div>
+        </div>
+        <form class="watch" id="watch">
+          ${pill('ok', 'Free, and you can stop it any time')}
+          <h2 class="serif" style="font-size:32px;margin:14px 0 6px">We will watch for you.</h2>
+          <p>We re-check practices near you each morning. When one opens to new NHS adults, you hear from us.</p>
+          <div class="field" style="margin-bottom:10px"><label for="w-contact" style="color:var(--panel-muted)">Email or mobile</label><input class="input" id="w-contact" required placeholder="Where we should reach you"></div>
+          <button class="btn" type="submit" style="width:100%;background:var(--mint);color:#06302B">Tell me when one opens</button>
+          <p style="font-size:12.5px;margin:12px 0 0">We use your postcode to match practices and nothing else. No account, no marketing.</p>
+          <p style="font-size:14px;margin:16px 0 0;color:var(--panel-ink)"><b class="num">${S.alerts}</b> people are waiting on a practice near ${esc(s.postcode)}.</p>
+        </form>
+      </div>`;
+    view.querySelector('#widen')?.addEventListener('click', () => { s.radius = 10; results(); });
+    view.querySelector('#private').onclick = () => { s.nhsOnly = false; s.treatment = 'checkup'; s.sort = 'price'; s.radius = 10; results(); };
+    view.querySelector('#urgent').onclick = () => { s.nhsOnly = false; s.treatment = 'urgent'; s.urgent = true; results(); };
+    view.querySelector('#watch').onsubmit = (e) => { e.preventDefault(); S.alerts++; e.target.innerHTML = `<h2 class="serif" style="font-size:30px;margin:0 0 8px">You are on the list.</h2><p>We will message you when a practice within 10 miles of ${esc(s.postcode)} opens to new NHS adults.</p>`; };
+  }
+
+  function practice(id) {
+    const p = S.practices.find((x) => x.id === id);
+    if (!p) { location.hash = 'results'; return; }
+    const f = freshness(p);
+    const tid = S.search.treatment;
+    const rows = TREATMENTS.map((t) => { const pr = p.prices[t.id]; return `<tr><td><b>${esc(t.label)}</b></td><td class="num">${t.nhs != null ? money(t.nhs) + ' <span class="meta">' + t.band + '</span>' : '<span class="meta">Not covered</span>'}</td><td class="money num">${pr ? money(pr[0]) : '<span class="meta">Not published</span>'}</td><td class="meta">${pr ? esc(pr[1]) : ''}</td></tr>`; }).join('');
+    view.innerHTML = `
+      <a href="#results" class="meta" style="text-decoration:none">‹ Back to results</a>
+      <div class="detail fade" style="margin-top:14px">
+        <div class="stack">
+          <div>
+            <h1 class="serif" style="font-size:40px;margin:0 0 6px;color:var(--brand-deep)">${esc(p.name)}</h1>
+            <div class="meta">${esc(p.street)}, ${esc(p.area)} ${esc(p.pc)} &middot; ${p.miles} miles from ${esc(S.search.postcode)} &middot; ODS ${esc(p.ods)}</div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px">${pill('ok', 'CQC registered')}${pill(f.badge.kind, f.badge.text)}${p.nhsAdults ? pill('ok', 'NHS profile: accepting adults') : pill('plain', 'NHS profile: not accepting adults')}</div>
+          </div>
+          ${p.real ? '<div class="note"><span aria-hidden="true">!</span><div>This entry uses a real practice name and ODS code from the team’s worked example for the freshness agent. Its dates are placeholders and it has no prices. Check the practice’s own NHS profile for real details.</div></div>' : ''}
+          <div><div class="eyebrow" style="margin-bottom:10px">Is it actually open to new patients?</div>
+            <div class="evidence">
+              <div class="card"><b>The practice</b><p>${p.practiceConfirmed ? 'Confirmed ' + fmt(p.practiceConfirmed) + ', ' + daysAgo(p.practiceConfirmed) + ' days ago' : (p.requestedOn ? 'Asked to confirm on ' + fmt(p.requestedOn) + '. No reply yet.' : 'Not confirmed with us yet')}</p></div>
+              <div class="card"><b>Patients</b><p>${p.patientsGot ? esc(p.patientsGot) + ' who enquired this month got an appointment' : 'No patient reports yet'}</p></div>
+              <div class="card"><b>NHS profile</b><p>Last confirmed ${fmt(p.nhsConfirmed, true)} (${daysAgo(p.nhsConfirmed)} days ago). Read today at 06:00.</p></div>
+            </div></div>
+          <div class="card" style="overflow:hidden">
+            <div class="pad" style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;border-bottom:1px solid var(--line)">
+              <b>Price list</b><span class="meta">${p.published ? 'Published by the practice on ' + fmt(p.published, true) + ' &middot; reviewed by a dentist before going live' : 'This practice has not published prices yet'}</span>
+            </div>
+            <div class="table-wrap"><table><thead><tr><th>Treatment</th><th>NHS</th><th>Private</th><th>What that covers</th></tr></thead><tbody>${rows}</tbody></table></div>
+          </div>
+          <div class="card pad"><div class="eyebrow" style="margin-bottom:8px">Practical</div>
+            <p style="margin:0 0 4px">${esc(p.hours)}</p>
+            ${p.plan ? `<p style="margin:0 0 4px">Payment plan available${p.finance ? ', with 0% finance' : ''}.</p>` : ''}
+            <p style="margin:0 0 4px">${esc(p.access)}</p>${p.langs ? `<p style="margin:0" class="meta">Languages: ${esc(p.langs)}</p>` : ''}</div>
+        </div>
+        <aside class="card enquire">
+          <h2 class="serif" style="font-size:26px;margin:0 0 4px">Ask for an appointment</h2>
+          <p class="meta" style="margin:0 0 14px">Goes straight to the practice with your treatment and preferred times. No account needed.</p>
+          <form id="enq">
+            <div class="field"><label for="e-t">Treatment</label><select class="input" id="e-t">${TREATMENTS.map((t) => `<option value="${t.id}" ${t.id === tid ? 'selected' : ''}>${esc(t.label)}${t.nhs != null && p.nhsAdults ? ' (NHS if available)' : ''}</option>`).join('')}</select></div>
+            <div class="field"><label for="e-n">Your name</label><input class="input" id="e-n" required autocomplete="name"></div>
+            <div class="field"><label for="e-c">Phone or email</label><input class="input" id="e-c" required></div>
+            <div class="field"><label for="e-w">When suits you</label><select class="input" id="e-w"><option>Weekday mornings</option><option>Weekday afternoons</option><option>Evenings</option><option>Saturdays</option></select></div>
+            <button class="btn btn-primary" type="submit">Send to the practice</button>
+            <p class="meta" style="margin:0;font-size:13px">We pass on only what is above. Your details are never sold or used for advertising.</p>
+          </form>
+        </aside>
+      </div>`;
+    view.querySelector('#enq').onsubmit = (e) => {
+      e.preventDefault();
+      const name = view.querySelector('#e-n').value.trim();
+      S.enquiries.unshift({ at: new Date(TODAY), practice: p.id, name, treatment: view.querySelector('#e-t').value, when: view.querySelector('#e-w').value, status: 'New' });
+      e.target.innerHTML = `<div class="note" style="background:var(--brand-soft);border-color:var(--brand-line);color:var(--brand-deep)"><span aria-hidden="true">✓</span><div><b>Sent to ${esc(p.name)}.</b> They usually reply within a working day. ${p.id === 'kingfisher' ? 'You can see it arrive in <a href="#portal">the practice portal</a>.' : ''}</div></div>`;
+    };
+  }
+
+  function how() {
+    view.innerHTML = `<div class="fade" style="max-width:760px">
+      <h1 class="serif" style="font-size:44px;margin:0 0 12px;color:var(--brand-deep)">How it works</h1>
+      <p class="lede">Around 28 million adults in England have not seen an NHS dentist in two years. Finding one means ringing round, and private prices are rarely published. This portal puts NHS availability and private prices in one search.</p>
+      <div class="stack">
+        <div class="card pad"><h2 style="margin:0 0 6px;font-size:19px">Where the information comes from</h2><p style="margin:0;color:var(--ink-2)">Practice details and NHS acceptance status come from NHS open data. Private prices are entered and dated by each practice, then checked by a registered dentist against GDC advertising guidance before they go live. Only CQC-registered practices are listed.</p></div>
+        <div class="card pad"><h2 style="margin:0 0 6px;font-size:19px">Keeping availability honest</h2><p style="margin:0;color:var(--ink-2)">An audit found 86 of 100 practices listed as accepting new adults could not take one (BDA, 2024). So every listing shows who confirmed it and when. Each morning our <a href="#agent">freshness agent</a> reads the “Last confirmed” date on each NHS profile. When it is older than a set number of days, weeks or months, the agent asks the practice to confirm or update its details.</p></div>
+        <div class="card pad"><h2 style="margin:0 0 6px;font-size:19px">How we are paid</h2><p style="margin:0;color:var(--ink-2)">Searching is free. Listing is free. Practices pay a referral fee only when a patient we sent starts high-value treatment, such as aligners or implants. NHS options are always shown, and fees never change the order of results.</p></div>
+        <div class="card pad"><h2 style="margin:0 0 6px;font-size:19px">Your data</h2><p style="margin:0;color:var(--ink-2)">Enquiries go only to the practice you choose. Data is kept in the UK, limited to what the practice needs, and never sold or used for advertising.</p></div>
+      </div></div>`;
+  }
+
+  function portal() {
+    const p = S.practices.find((x) => x.id === 'kingfisher');
+    const f = freshness(p);
+    const myEnq = S.enquiries.filter((e) => e.practice === p.id);
+    const newCount = myEnq.filter((e) => e.status === 'New').length;
+    const tab = S.portalTab;
+    const changes = Object.keys(S.draft).length;
+    let body = '';
+    if (tab === 'prices') {
+      body = `<div class="cols"><div class="stack">
+        ${S.pending ? `<div class="note"><span aria-hidden="true">✎</span><div style="flex:1"><b>${Object.keys(S.pending).length} changes awaiting review.</b> Patients still see your live prices until a GDC-registered reviewer approves them, usually within a working day.</div><button class="btn btn-ghost btn-small" id="approve" type="button">Approve as reviewer (demo)</button></div>` : ''}
+        <div class="card" style="overflow:hidden"><div class="table-wrap"><table>
+          <thead><tr><th>Treatment</th><th>NHS band</th><th>Your price</th><th>What it covers</th></tr></thead>
+          <tbody>${TREATMENTS.map((t) => { const pr = p.prices[t.id]; const v = S.draft[t.id] ?? (pr ? pr[0] : ''); return `<tr class="${S.draft[t.id] != null ? 'changed' : ''}"><td><b>${esc(t.label)}</b></td><td class="meta num">${t.nhs != null ? t.band + ' · ' + money(t.nhs) : t.band}</td><td><label class="sr" style="position:absolute;left:-9999px" for="pi-${t.id}">${esc(t.label)} price</label>£ <input class="price-input num" id="pi-${t.id}" data-price="${t.id}" inputmode="decimal" value="${v}"></td><td class="meta">${pr ? esc(pr[1]) : ''}</td></tr>`; }).join('')}</tbody>
+        </table></div></div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-primary" id="submit-prices" type="button" ${changes ? '' : 'disabled style="opacity:.5"'}>Submit ${changes || ''} change${changes === 1 ? '' : 's'} for review</button>${changes ? '<button class="btn btn-ghost" id="discard" type="button">Discard</button>' : ''}</div>
+      </div>
+      <div class="stack">
+        <div class="card pad"><div class="eyebrow" style="margin-bottom:10px">Listing status</div>
+          <p style="margin:0 0 10px;font-size:14px"><b>NHS availability ${p.practiceConfirmed ? 'confirmed ' + daysAgo(p.practiceConfirmed) + ' days ago' : 'not confirmed'}.</b> We will ask you again at ${S.rules.ask[0]} ${S.rules.ask[1]}.</p>
+          <div class="seg" role="group" aria-label="Taking new NHS adults"><button type="button" data-avail="yes" aria-pressed="${p.nhsAdults}">Taking NHS adults</button><button type="button" data-avail="no" aria-pressed="${!p.nhsAdults}">Not at the moment</button></div>
+          <button class="btn btn-ghost btn-small" style="margin-top:10px" id="confirm-now" type="button">Confirm it is still right</button>
+          <p class="meta" style="font-size:13px;margin:10px 0 0">Please update your NHS profile too, so the nhs.uk date matches.</p></div>
+        <div class="card pad"><div class="eyebrow" style="margin-bottom:10px">How you compare nearby</div>${['crown', 'checkup', 'aligners'].map((tid) => { const r = privateRange(tid, S.practices); const mine = p.prices[tid]?.[0]; if (!r || !mine) return ''; const pos = r.max === r.min ? 50 : Math.round((mine - r.min) / (r.max - r.min) * 100); return `<div style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;font-size:14px"><b>${tById(tid).label}</b><span class="num">${money(mine)}</span></div><div style="height:6px;border-radius:9px;background:var(--line);position:relative;margin-top:7px"><span style="position:absolute;left:calc(${pos}% - 2px);top:-4px;width:4px;height:14px;border-radius:2px;background:var(--brand-deep)"></span></div><div class="meta num" style="display:flex;justify-content:space-between;font-size:12px;margin-top:4px"><span>${money(r.min)}</span><span>${money(r.max)}</span></div></div>`; }).join('')}<p class="meta" style="font-size:13px;margin:0">Only you see your position.</p></div>
+      </div></div>`;
+    } else if (tab === 'enquiries') {
+      body = `<div class="card" style="overflow:hidden"><div class="table-wrap"><table><thead><tr><th>Received</th><th>Patient</th><th>Treatment</th><th>Prefers</th><th>Status</th></tr></thead><tbody>
+        ${myEnq.map((e, i) => `<tr><td class="num">${fmt(e.at)}</td><td>${esc(e.name)}</td><td>${esc(tById(e.treatment).label)}</td><td class="meta">${esc(e.when)}</td><td>${e.status === 'New' ? `<button class="btn btn-ghost btn-small" data-book="${i}" type="button">Mark booked</button>` : pill(e.status === 'Started treatment' ? 'ok' : 'plain', e.status)}</td></tr>`).join('')}
+      </tbody></table></div></div><p class="meta">Send yourself a test enquiry from <a href="#practice-kingfisher">your public listing</a>.</p>`;
+    } else {
+      const started = myEnq.filter((e) => e.status === 'Started treatment');
+      body = `<div class="stack" style="max-width:720px"><div class="card pad"><h2 style="margin:0 0 6px;font-size:19px">Listing is free</h2><p style="margin:0;color:var(--ink-2)">You pay a referral fee only when a patient we sent starts high-value treatment, such as aligners or implants. Routine NHS and private care never carries a fee, and fees never change where you appear in search.</p></div>
+        <div class="card" style="overflow:hidden"><div class="pad" style="border-bottom:1px solid var(--line)"><b>Referral fees this month</b></div><div class="table-wrap"><table><thead><tr><th>Patient</th><th>Treatment</th><th>Started</th><th>Fee</th></tr></thead><tbody>${started.length ? started.map((e) => `<tr><td>${esc(e.name)}</td><td>${esc(tById(e.treatment).label)}</td><td class="num">${fmt(e.at)}</td><td class="meta">Rate set in your agreement</td></tr>`).join('') : '<tr><td colspan="4" class="meta">None yet.</td></tr>'}</tbody></table></div></div></div>`;
+    }
+    view.innerHTML = `<div class="console fade">
+      <aside class="side">
+        <div class="who"><small>Signed in as</small><b>${esc(p.name)}</b><small>${esc(p.area)} ${esc(p.pc)}</small></div>
+        <div>${[['prices', 'Prices & listing'], ['enquiries', 'Enquiries'], ['billing', 'Fees']].map(([k, l]) => `<button class="tab" type="button" data-tab="${k}" aria-pressed="${tab === k}"><span>${l}</span>${k === 'enquiries' && newCount ? `<span class="badge">${newCount}</span>` : ''}</button>`).join('')}</div>
+        <div style="display:flex;flex-direction:column;gap:6px"><div class="eyebrow" style="color:var(--panel-muted)">This month</div><div class="stat"><span>Enquiries</span><b class="num">${myEnq.length + 20}</b></div><div class="stat"><span>Booked</span><b class="num">${myEnq.filter((e) => e.status !== 'New').length + 12}</b></div><div class="stat"><span>Listing fee</span><b style="color:var(--mint)">Free</b></div></div>
+      </aside>
+      <section><h1>${tab === 'prices' ? 'Your price list' : tab === 'enquiries' ? 'Enquiries' : 'Fees'}</h1>
+        <p class="meta" style="margin:0 0 18px">${tab === 'prices' ? 'Live prices published ' + fmt(p.published, true) + '. Patients see the date, so keep it current.' : tab === 'enquiries' ? 'Patients who asked for an appointment through the portal.' : 'What you pay, and when.'}</p>${body}</section>
+    </div>`;
+    view.querySelectorAll('[data-tab]').forEach((b) => b.onclick = () => { S.portalTab = b.dataset.tab; portal(); });
+    view.querySelectorAll('[data-price]').forEach((inp) => inp.onchange = () => {
+      const v = parseFloat(inp.value), cur = p.prices[inp.dataset.price]?.[0];
+      if (isNaN(v) || v === cur) delete S.draft[inp.dataset.price]; else S.draft[inp.dataset.price] = v;
+      portal(); view.querySelector('#' + inp.id)?.focus();
+    });
+    view.querySelector('#submit-prices')?.addEventListener('click', () => { if (!changes) return; S.pending = Object.assign({}, S.pending, S.draft); S.draft = {}; toast('Submitted for review.'); portal(); });
+    view.querySelector('#discard')?.addEventListener('click', () => { S.draft = {}; portal(); });
+    view.querySelector('#approve')?.addEventListener('click', () => {
+      Object.entries(S.pending).forEach(([tid, v]) => { p.prices[tid] = [v, p.prices[tid]?.[1] || 'Added by the practice']; });
+      p.published = new Date(TODAY); S.pending = null; toast('Approved. Patients now see the new prices, dated today.'); portal();
+    });
+    view.querySelectorAll('[data-avail]').forEach((b) => b.onclick = () => { practiceReply(p, b.dataset.avail); toast('Saved. Patients see this, dated today.'); portal(); });
+    view.querySelector('#confirm-now')?.addEventListener('click', () => { practiceReply(p, p.nhsAdults ? 'yes' : 'no'); toast('Confirmed. Patients see today’s date.'); portal(); });
+    view.querySelectorAll('[data-book]').forEach((b) => b.onclick = () => { myEnq[Number(b.dataset.book)].status = 'Booked'; portal(); });
+  }
+
+  function agent() {
+    const rows = S.practices.map((p) => ({ p, f: freshness(p) })).sort((a, b) => b.f.age - a.f.age);
+    const counts = { fresh: rows.filter((r) => r.f.age < ruleDays('ask')).length, asked: rows.filter((r) => r.p.requestedOn && !(r.p.practiceConfirmed && r.p.practiceConfirmed >= r.p.requestedOn)).length, stale: rows.filter((r) => r.f.stale).length };
+    const sel = S.practices.find((p) => p.id === (S.agentSel || 'radcliffe'));
+    const sf = freshness(sel);
+    const pending = sel.requestedOn && !(sel.practiceConfirmed && sel.practiceConfirmed >= sel.requestedOn);
+    const plus = (date, n) => fmt(new Date(date.getTime() + n * DAY));
+    const steps = [
+      { when: 'Today 06:00', done: true, title: 'Read the NHS profile', body: `“Last confirmed” is ${fmt(sf.lastConfirmed, true)}, ${sf.age} days ago. Ask threshold: ${S.rules.ask[0]} ${S.rules.ask[1]}.` },
+      { when: 'Today 06:01', done: true, title: sf.stale ? 'Marked the listing unverified' : 'Listing left as it is', body: sf.stale ? 'Patients see the date and a prompt to ring first. Removed from “Taking new NHS adults” results.' : 'Still inside the unverified threshold of ' + S.rules.unverified[0] + ' ' + S.rules.unverified[1] + '.' },
+      { when: sel.requestedOn ? fmt(sel.requestedOn) : 'Next run', done: !!sel.requestedOn, title: 'Email the practice', body: sel.requestedOn ? 'One-tap confirm link sent.' : (sf.age >= ruleDays('ask') ? 'Due. Press “Run agent now”.' : 'Not needed yet.') },
+      { when: sel.requestedOn ? plus(sel.requestedOn, ruleDays('remind')) : '—', done: pending && daysAgo(sel.requestedOn) >= ruleDays('remind'), title: 'Text reminder', body: 'Only if there is no reply after ' + S.rules.remind[0] + ' ' + S.rules.remind[1] + '.' },
+      { when: sel.requestedOn ? plus(sel.requestedOn, ruleDays('escalate')) : '—', done: pending && daysAgo(sel.requestedOn) >= ruleDays('escalate'), title: 'Pass to the listings team', body: 'A person phones the practice if there is still no reply.' },
+      { when: 'On reply', done: !!(sel.practiceConfirmed && sel.requestedOn && sel.practiceConfirmed >= sel.requestedOn), title: 'Update the listing', body: 'The answer and its date go live for patients straight away.' }
+    ];
+    view.innerHTML = `<div class="console fade">
+      <aside class="side">
+        <div class="who"><small>Region</small><b>Greater Manchester</b><small>Demo: ${S.practices.length} practices</small></div>
+        <div style="display:flex;flex-direction:column;gap:6px"><div class="eyebrow" style="color:var(--panel-muted)">This morning’s read</div>
+          <div class="stat"><span>Fresh</span><b class="num" style="color:var(--mint)">${counts.fresh}</b></div>
+          <div class="stat"><span>Asked to confirm</span><b class="num">${counts.asked}</b></div>
+          <div class="stat"><span>Unverified</span><b class="num" style="color:#F0C27A">${counts.stale}</b></div></div>
+        <button class="btn btn-small" id="run" type="button" style="background:var(--mint);color:#06302B">Run agent now</button>
+        ${S.lastRun ? `<small style="color:var(--panel-muted)">Last run today. Asked ${S.lastAsked} practice${S.lastAsked === 1 ? '' : 's'}.</small>` : ''}
+      </aside>
+      <section>
+        <h1>Listing freshness agent</h1>
+        <p class="meta" style="margin:0 0 18px;max-width:46em">Each morning the agent reads the “Last confirmed” date on every practice’s NHS profile. When it passes your threshold, the agent asks the practice to confirm or update its details. Change a threshold and the queue and patient listings update straight away.</p>
+        <div class="cols">
+          <div class="stack">
+            <div class="card pad ${sf.badge.kind === 'warn' ? 'unverified' : ''}" style="${sf.badge.kind === 'warn' ? 'border-color:var(--warn-line)' : ''}">
+              <div class="pcard-head" style="margin-bottom:14px"><div><h2 style="margin:0 0 3px;font-size:21px">${esc(sel.name)}</h2><div class="meta">${esc(sel.street)}, ${esc(sel.area)} &middot; ODS ${esc(sel.ods)}</div></div><div>${pill(sf.status.kind, sf.status.text)}</div></div>
+              <div class="cells" style="margin-bottom:18px">
+                <div style="${sf.stale ? 'background:var(--warn-bg)' : ''}"><div class="eyebrow">NHS profile last confirmed</div><div class="v num">${fmt(sel.nhsConfirmed, true)}</div><div class="s num">${daysAgo(sel.nhsConfirmed)} days ago</div></div>
+                <div><div class="eyebrow">Unverified after</div><div class="v">${S.rules.unverified[0]} ${S.rules.unverified[1]}</div><div class="s">${ruleDays('unverified')} days</div></div>
+                <div><div class="eyebrow">Patients see</div><div style="margin-top:8px">${pill(sf.badge.kind, sf.badge.text)}</div></div>
+              </div>
+              <div class="eyebrow" style="margin-bottom:12px">What the agent does</div>
+              <div class="timeline">${steps.map((s, i) => `<div class="tl"><div class="when num">${esc(s.when)}</div><div class="dot"><i class="${s.done ? '' : 'next'}"></i>${i < steps.length - 1 ? '<u></u>' : ''}</div><div class="body"><b style="color:${s.done ? 'var(--ink)' : 'var(--muted)'}">${esc(s.title)}</b><p>${esc(s.body)}</p></div></div>`).join('')}</div>
+              ${sel.real ? '<p class="meta" style="font-size:12.5px;margin:6px 0 0">Practice name and ODS code from the team’s worked example. The 4 March date is a placeholder until the agent reads the live nhs.uk profile.</p>' : ''}
+            </div>
+            <div class="card" style="overflow:hidden">
+              <div class="pad" style="border-bottom:1px solid var(--line);display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px"><b>Queue, oldest confirmation first</b><span class="meta">Select a practice to see its timeline</span></div>
+              <div class="table-wrap"><table><thead><tr><th>Practice</th><th>ODS</th><th>Last confirmed</th><th>Age</th><th>Agent status</th><th>Patients see</th></tr></thead><tbody>
+                ${rows.map(({ p, f }) => `<tr style="${p === sel ? 'background:var(--brand-soft)' : ''}"><td><button type="button" data-sel="${p.id}" style="background:none;border:0;padding:0;text-align:left;font-weight:600;color:var(--brand-deep);text-decoration:underline">${esc(p.name)}</button><div class="meta" style="font-size:13px">${esc(p.area)}</div></td><td class="num meta">${esc(p.ods)}</td><td class="num">${fmt(f.lastConfirmed, true)}</td><td class="num" style="font-weight:700;color:${f.age >= ruleDays('ask') ? 'var(--warn)' : 'var(--ink-2)'}">${f.age} days</td><td>${pill(f.status.kind, f.status.text)}</td><td>${pill(f.badge.kind, f.badge.text.split(' · ')[0])}</td></tr>`).join('')}
+              </tbody></table></div>
+            </div>
+            <div class="card pad"><div class="eyebrow" style="margin-bottom:10px">Activity log</div><div class="log">${S.log.map((l) => `<div><span class="num meta">${fmt(l.at)}</span> &middot; ${esc(l.text)}</div>`).join('')}</div></div>
+          </div>
+          <div class="stack">
+            <div class="card pad" style="border-color:var(--brand-line)"><div class="eyebrow">When to act</div><p class="meta" style="font-size:13.5px;margin:4px 0 14px">Counted from the NHS profile’s “Last confirmed” date. Pick days, weeks or months.</p>
+              <div class="stack" style="gap:14px">${[['ask', 'Ask the practice to confirm after'], ['remind', 'Send a reminder if no reply after'], ['unverified', 'Mark the listing unverified after'], ['escalate', 'Pass to the listings team after']].map(([k, l]) => `<div class="rule"><label for="r-${k}" style="font-size:14px;font-weight:600">${l}</label><div class="row"><input id="r-${k}" class="num" type="number" min="1" max="365" value="${S.rules[k][0]}" data-rule="${k}"><div class="seg" role="group" aria-label="${l} unit">${['days', 'weeks', 'months'].map((u) => `<button type="button" data-rule-unit="${k}" data-u="${u}" aria-pressed="${S.rules[k][1] === u}">${u[0].toUpperCase() + u.slice(1)}</button>`).join('')}</div></div></div>`).join('')}</div></div>
+            <div class="card pad"><div class="eyebrow" style="margin-bottom:10px">What the practice receives</div>
+              <div class="mail"><div class="hd">To: reception, ${esc(sel.name)}<b>Are you taking new NHS patients?</b></div>
+                <div class="bd"><span>Your NHS profile (ODS ${esc(sel.ods)}) was last confirmed on <b>${fmt(sf.lastConfirmed, true)}</b>. Patients searching near ${esc(sel.area)} see that date. Is it still right?</span>
+                  <button class="btn btn-primary btn-small" data-reply="yes" type="button">Yes, taking new NHS adults</button>
+                  <button class="btn btn-ghost btn-small" data-reply="no" type="button">Not at the moment</button>
+                  <button class="btn btn-ghost btn-small" data-reply="update" type="button">Update our details</button>
+                  <span class="meta" style="font-size:12.5px">One tap, no login. In this demo the buttons act as the practice replying.</span></div></div></div>
+            <div class="card pad"><div class="eyebrow" style="margin-bottom:10px">Guardrails</div><ul style="margin:0;padding-left:18px;font-size:13.5px;color:var(--ink-2);display:flex;flex-direction:column;gap:6px">
+              <li>Reads public NHS data only. It never edits a practice’s NHS profile.</li><li>“Practice confirmed” appears only after a real reply.</li><li>Every message and reply is logged with its time.</li><li>Practices choose email, text or phone, and can opt out of reminders.</li></ul></div>
+          </div>
+        </div>
+      </section></div>`;
+    view.querySelector('#run').onclick = () => { S.lastAsked = runAgent(); toast(S.lastAsked ? `Agent ran. Asked ${S.lastAsked} practice${S.lastAsked === 1 ? '' : 's'} to confirm.` : 'Agent ran. Nothing new to ask.'); agent(); };
+    view.querySelectorAll('[data-sel]').forEach((b) => b.onclick = () => { S.agentSel = b.dataset.sel; agent(); });
+    view.querySelectorAll('[data-rule]').forEach((inp) => inp.onchange = () => { const v = Math.max(1, Math.min(365, parseInt(inp.value, 10) || 1)); S.rules[inp.dataset.rule][0] = v; agent(); });
+    view.querySelectorAll('[data-rule-unit]').forEach((b) => b.onclick = () => { S.rules[b.dataset.ruleUnit][1] = b.dataset.u; agent(); });
+    view.querySelectorAll('[data-reply]').forEach((b) => b.onclick = () => { practiceReply(sel, b.dataset.reply); toast(sel.name + ' replied. Its patient listing is updated.'); agent(); });
+  }
+
+  // ---------- Router ----------
+  function route() {
+    const h = (location.hash || '#home').slice(1);
+    const key = h.startsWith('practice-') ? 'home' : (['home', 'results', 'how', 'portal', 'agent'].includes(h) ? h : 'home');
+    document.querySelectorAll('[data-nav]').forEach((a) => a.toggleAttribute('aria-current', false));
+    const navKey = key === 'results' ? 'home' : key;
+    document.querySelector(`[data-nav="${navKey}"]`)?.setAttribute('aria-current', 'page');
+    if (h.startsWith('practice-')) practice(h.slice(9));
+    else ({ home, results, how, portal, agent }[key])();
+    window.scrollTo(0, 0);
+  }
+  window.addEventListener('hashchange', route);
+  document.getElementById('reset').onclick = () => { S = SEED(); toast('Demo reset.'); route(); };
+  route();
+})();
+</script>
 </body>
 </html>
