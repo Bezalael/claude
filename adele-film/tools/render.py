@@ -14,8 +14,10 @@ stream copy. The audio is Remotion's own mix, rendered on its own and cached: it
 voice, music, sound effects, timeline or composition change. It is mastered to -16 LUFS and muxed in.
 
 Every assembly is verified: the frame count must equal the composition length, and the frames either
-side of each join are compared (PSNR) against a fresh still of the same frame. Segments older than the
-latest change under src/ or public/ are reported as possibly stale.
+side of each join are compared (PSNR, by exact frame index, BT.709) against a fresh still. A join passes
+when the expected frame is the best match among its neighbours (nothing shifted or swapped) and clears
+a codec-tolerance floor. Segments older than the latest change under src/ or public/ are reported as
+possibly stale.
 """
 import argparse
 import json
@@ -27,7 +29,7 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 COMP = "AdeleCare"
 BROWSER = os.environ.get("REMOTION_BROWSER", "/opt/pw-browsers/chromium_headless_shell-1243/chrome-headless-shell-linux64/chrome-headless-shell")
-MIN_PSNR = 38.0  # dB; identical renders score far higher, a wrong or shifted frame far lower
+MIN_PSNR = 30.0  # dB; H.264 at CRF 18 scores 30-48 against a lossless still, a wrong frame far lower
 
 
 def run(cmd, **kw):
@@ -77,15 +79,16 @@ def frame_count(path):
     return int(out)
 
 
-def psnr(video, frame, fps, reference):
-    """PSNR between frame `frame` of `video` and the PNG `reference`."""
-    r = subprocess.run(
-        ["ffmpeg", "-hide_banner", "-ss", f"{(frame + 0.5) / fps:.4f}", "-i", video, "-i", reference,
-         "-frames:v", "1", "-lavfi", "[0:v]format=rgb24[a];[1:v]format=rgb24[b];[a][b]psnr", "-f", "null", "-"],
-        capture_output=True, text=True,
-    )
+def psnr(video, n, reference):
+    """PSNR between frame index n of `video` (BT.709, limited range) and the PNG `reference`, or None."""
+    graph = (f"[0:v]select=eq(n\\,{n}),scale=in_color_matrix=bt709:in_range=tv:out_range=pc,format=rgb24[a];"
+             "[1:v]format=rgb24[b];[a][b]psnr")
+    r = subprocess.run(["ffmpeg", "-hide_banner", "-i", video, "-i", reference, "-lavfi", graph, "-frames:v", "1", "-f", "null", "-"],
+                       capture_output=True, text=True)
     m = re.search(r"average:(\S+)", r.stderr)
-    return float("inf") if m and m.group(1) == "inf" else float(m.group(1)) if m else 0.0
+    if not m:
+        return None
+    return float("inf") if m.group(1) == "inf" else float(m.group(1))
 
 
 def main():
@@ -150,14 +153,20 @@ def main():
     n = frame_count(os.path.join(ROOT, final))
     problems = [] if n == t["total"] else [f"frame count {n}, expected {t['total']}"]
     checks = sorted({f for _, _, first, last in t["segments"] for f in (first, last)})
+    video = os.path.join(ROOT, final)
     for f in checks:
         ref = os.path.join(seg_dir, f"check-{f}.png")
         remotion("still", bundle, COMP, ref, f"--frame={f}", *scale)
-        score = psnr(os.path.join(ROOT, final), f, t["fps"], os.path.join(ROOT, ref))
-        print(f"frame {f:5d}: PSNR {score:.1f} dB")
-        if score < MIN_PSNR:
-            problems.append(f"frame {f} differs from a direct render (PSNR {score:.1f} dB)")
-        os.remove(os.path.join(ROOT, ref))
+        ref_abs = os.path.join(ROOT, ref)
+        here = psnr(video, f, ref_abs)
+        around = [x for x in (psnr(video, f - 1, ref_abs) if f > 0 else None, psnr(video, f + 1, ref_abs) if f + 1 < n else None) if x is not None]
+        best_nearby = max(around, default=0.0)
+        print(f"frame {f:5d}: {here if here is not None else 'n/a'} dB (neighbours up to {best_nearby:.1f} dB)")
+        if here is None or here < MIN_PSNR:
+            problems.append(f"frame {f} does not match a direct render ({here} dB)")
+        elif here + 0.5 < best_nearby:
+            problems.append(f"frame {f} matches a neighbouring frame better ({best_nearby:.1f} vs {here:.1f} dB): shifted join")
+        os.remove(ref_abs)
 
     print(f"\n{final}: {n} frames")
     if stale:
