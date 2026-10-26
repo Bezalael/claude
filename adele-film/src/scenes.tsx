@@ -130,9 +130,9 @@ const LogoScene: React.FC = () => {
   const punch = spring({ frame: f - cue(12.5), fps, config: { damping: 9, stiffness: 180 } });
   const iconScale = 1 + 0.07 * Math.sin(Math.min(1, punch) * Math.PI);
   const open = interpolate(f, [cue(12.75), cue(13.65)], [0, 1], { ...clamp, easing: Easing.inOut(Easing.cubic) });
-  const lock = interpolate(f, [cue(13.9), cue(14.7)], [0, 1], { ...clamp, easing: Easing.inOut(Easing.cubic) });
-  const word = interpolate(f, [cue(14.05), cue(15.0)], [0, 1], { ...clamp, easing: Easing.out(Easing.cubic) });
-  const sheen = interpolate(f, [cue(15.1), cue(16.0)], [0, 1], clamp);
+  const lock = interpolate(f, [cue(13.85), cue(14.6)], [0, 1], { ...clamp, easing: Easing.inOut(Easing.cubic) });
+  const word = interpolate(f, [cue(14.55), cue(15.4)], [0, 1], { ...clamp, easing: Easing.out(Easing.cubic) });
+  const sheen = interpolate(f, [cue(15.5), cue(16.4)], [0, 1], clamp);
   const outro = interpolate(f, [cue(18.0), cue(18.95)], [0, 1], { ...clamp, easing: Easing.inOut(Easing.cubic) });
 
   // symbol: inside the icon -> centre (LOGO_END) -> lockup position -> back to centre for the fly-through
@@ -142,7 +142,7 @@ const LogoScene: React.FC = () => {
   const cx = LOGO_END.cx + (L.cx - LOGO_END.cx) * at;
   const cy = LOGO_END.cy + (L.cy - LOGO_END.cy) * at;
   const brand = interpolate(open, [0.25, 0.7], [0, 1], clamp);
-  const text = word * (1 - outro);
+  const text = word * (1 - Math.min(1, outro * 2)); // gone before the symbol re-centres
   const s = open < 1 ? iconScale : 1;
   return (
     <AbsoluteFill>
@@ -163,7 +163,7 @@ const LogoScene: React.FC = () => {
           <Wordmark height={150} />
         </div>
       </div>
-      <div style={{ position: "absolute", top: 640, width: "100%", opacity: 1 - outro, filter: `blur(${outro * 10}px)` }}>
+      <div style={{ position: "absolute", top: 640, width: "100%", opacity: 1 - Math.min(1, outro * 2), filter: `blur(${outro * 10}px)` }}>
         <Words text="The AI receptionist for UK dental practices." times={words("intro", 3)} size={58} weight={600} gradientWords={["receptionist"]} />
       </div>
     </AbsoluteFill>
@@ -205,7 +205,7 @@ const Call: React.FC = () => {
       </div>
       <Rise at={cue(20.0)} style={{ position: "absolute", left: 300, top: 990, width: 470, display: "flex", justifyContent: "center" }}>
         <Pill style={{ fontSize: 26, padding: "10px 22px" }}>
-          <Dot size={12} /> {answered ? "Adele answered on the 2nd ring" : "A patient is calling"}
+          <Dot size={12} /> {answered ? "Adele answered on the first ring" : "A patient is calling"}
         </Pill>
       </Rise>
 
@@ -238,7 +238,7 @@ const Call: React.FC = () => {
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 8, alignItems: "flex-end" }}>
                 <Pill style={{ fontSize: 20, padding: "6px 14px", boxShadow: "none", background: "#F2F5F9" }}>✓ In your PMS</Pill>
-                <Pill style={{ fontSize: 20, padding: "6px 14px", boxShadow: "none", background: "#F2F5F9" }}>✓ SMS sent</Pill>
+                <Pill style={{ fontSize: 20, padding: "6px 14px", boxShadow: "none", background: "#F2F5F9" }}>✓ Confirmation sent</Pill>
               </div>
             </div>
           </GlowCard>
@@ -353,7 +353,7 @@ const WhatsApp: React.FC = () => {
   const rows = [
     { t: "09:00", n: "Aisha K. · Filling" },
     { t: "09:40", n: "Tom W. · Check-up" },
-    { t: "10:20", n: "James T. · Hygiene", gap: true },
+    { t: "10:20", n: "James T. · Check-up", gap: true },
     { t: "11:00", n: "Priya S. · Crown fit" },
     { t: "11:40", n: "Ben O. · Check-up" },
     { t: "12:20", n: "Lunch", muted: true },
@@ -372,7 +372,7 @@ const WhatsApp: React.FC = () => {
             <div style={{ padding: 36 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 24 }}>
                 <div style={{ fontSize: 36, fontWeight: 800 }}>Tomorrow · Dr Harris</div>
-                <div style={{ fontSize: 22, color: C.mute }}>Thursday</div>
+                <div style={{ fontSize: 22, color: C.mute }}>Wednesday</div>
               </div>
               {rows.map((r) => (
                 <DiaryRow key={r.t} {...r} cancel={r.gap ? cancel : 0} filled={r.gap ? filled : 0} />
@@ -463,9 +463,17 @@ const WhatsAppChat: React.FC = () => {
           <div style={{ fontSize: 18, opacity: 0.8 }}>Business account · replies by Adele</div>
         </div>
       </div>
-      <div style={{ flex: 1, padding: "22px 18px", display: "flex", flexDirection: "column", gap: 14 }}>
-        <div style={{ alignSelf: "center", background: "#E1F2FB", color: "#54656F", fontSize: 18, padding: "6px 14px", borderRadius: 10 }}>Today</div>
-        <WaBubble out at={cue(OFFER_AT)} time="09:03" read={read}>
+      {/* anchored to the bottom like a real chat: older messages scroll up out of view */}
+      <div style={{ flex: 1, padding: "18px 16px", display: "flex", flexDirection: "column", justifyContent: "flex-end", gap: 10, overflow: "hidden" }}>
+        <DayChip>Monday</DayChip>
+        <WaBubble at={0} time="16:12">
+          Hi, is there anything sooner than 12 June? I can come in at short notice.
+        </WaBubble>
+        <WaBubble out at={0} time="16:12" read>
+          I've added you to the waitlist, Sarah. I'll message you as soon as something opens up 😊
+        </WaBubble>
+        <DayChip>Today</DayChip>
+        <WaBubble out at={cue(OFFER_AT)} time="10:02" read={read}>
           Hi Sarah 👋 A 10:20 slot just opened tomorrow with Dr Harris. You asked for an earlier check-up. Would you like it?
         </WaBubble>
         {typing && (
@@ -475,10 +483,10 @@ const WhatsAppChat: React.FC = () => {
             ))}
           </div>
         )}
-        <WaBubble at={cue(REPLY_AT)} time="09:05">
+        <WaBubble at={cue(REPLY_AT)} time="10:04">
           Yes please! That's perfect 🙌
         </WaBubble>
-        <WaBubble out at={cue(DONE_AT)} time="09:05" read={false}>
+        <WaBubble out at={cue(DONE_AT)} time="10:04" read={false}>
           Done ✓ I've moved you from 12 June to tomorrow at 10:20. See you then!
         </WaBubble>
       </div>
@@ -489,6 +497,10 @@ const WhatsAppChat: React.FC = () => {
     </div>
   );
 };
+
+const DayChip: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <div style={{ alignSelf: "center", background: "#E1F2FB", color: "#54656F", fontSize: 17, padding: "5px 14px", borderRadius: 10 }}>{children}</div>
+);
 
 const WaBubble: React.FC<{ out?: boolean; at: number; time: string; read?: boolean; children: React.ReactNode }> = ({ out, at, time, read, children }) => {
   const p = useIn(at, 14);
@@ -502,8 +514,8 @@ const WaBubble: React.FC<{ out?: boolean; at: number; time: string; read?: boole
         borderRadius: 16,
         borderTopRightRadius: out ? 4 : 16,
         borderTopLeftRadius: out ? 16 : 4,
-        padding: "12px 16px 8px",
-        fontSize: 24,
+        padding: "10px 14px 6px",
+        fontSize: 21,
         lineHeight: 1.35,
         color: "#111B21",
         boxShadow: "0 1px 1px rgba(0,0,0,0.08)",
@@ -513,7 +525,7 @@ const WaBubble: React.FC<{ out?: boolean; at: number; time: string; read?: boole
       }}
     >
       {children}
-      <div style={{ textAlign: "right", fontSize: 16, color: "#667781", marginTop: 4 }}>
+      <div style={{ textAlign: "right", fontSize: 15, color: "#667781", marginTop: 2 }}>
         {time} {out && <span style={{ color: read ? WA.tick : "#8696A0" }}>✓✓</span>}
       </div>
     </div>
@@ -593,13 +605,13 @@ const Hub: React.FC = () => {
   const cue = useCue();
   const cx = 860;
   const cy = 560;
-  const chans = ["📞 Calls", "💬 WhatsApp", "🌐 Web chat", "✉️ Email", "📱 SMS"];
+  const chans = ["📞 Calls", "💬 WhatsApp", "🌐 Web chat"];
   const pms = useIn(cue(56.7), 14);
   const flow = (f % 40) / 40;
   return (
     <AbsoluteFill>
       <Rise at={0} style={{ position: "absolute", top: 90, width: "100%" }}>
-        <Words text="One assistant. Every channel." at={4} every={5} size={80} gradientWords={["One"]} />
+        <Words text="One assistant. Every conversation." at={4} every={5} size={80} gradientWords={["One"]} />
       </Rise>
       <div
         style={{
@@ -658,11 +670,11 @@ const Orbit: React.FC<{ label: string; i: number; n: number; cx: number; cy: num
 const Confirm: React.FC = () => {
   const cue = useCue();
   const rows = [
-    { at: cue(59.75), n: "Emma R.", d: "Thu 15:40 · Check-up", s: "Confirmed", ok: true },
-    { at: cue(60.2), n: "James T.", d: "Thu 16:20 · Hygiene", s: "Confirmed", ok: true },
-    { at: cue(60.65), n: "Aisha K.", d: "Fri 09:00 · Filling", s: "Confirmed", ok: true },
-    { at: cue(61.1), n: "Tom W.", d: "Fri 10:20 · Check-up", s: "Rebooked to Mon", ok: true },
-    { at: cue(63.2), n: "Priya S.", d: "Fri 11:40 · Crown fit", s: "No reply · team alerted", ok: false },
+    { at: cue(59.75), n: "Emma R.", d: "Wed 14:00 · Check-up", s: "Confirmed", ok: true },
+    { at: cue(60.2), n: "Oliver B.", d: "Wed 14:40 · Hygiene", s: "Confirmed", ok: true },
+    { at: cue(60.65), n: "Grace L.", d: "Wed 15:20 · Filling", s: "Confirmed", ok: true },
+    { at: cue(61.1), n: "Daniel K.", d: "Wed 16:00 · Check-up", s: "Moved to Friday", ok: true },
+    { at: cue(63.2), n: "Hannah W.", d: "Wed 16:40 · Crown fit", s: "No reply · team alerted", ok: false },
   ];
   return (
     <AbsoluteFill>
@@ -721,11 +733,10 @@ const ListScene: React.FC = () => {
   const cue = useCue();
   const items = [
     "Checking today's diary",
-    "Calling back missed enquiries",
+    "Following up missed enquiries",
     "Sending recall invites",
     "Welcoming back lapsed patients",
-    "Following up treatment plans",
-    "Filling a cancellation",
+    "Filling cancellations",
   ];
   const act = stepper(f, [0, cue(69.8), cue(71.1), cue(72.1)], 10);
   return (
