@@ -1,4 +1,4 @@
-"""Render the film in cached segments and assemble it without re-encoding.
+"""Render the film in cached segments and assemble it with one final encode.
 
 usage:
   python tools/render.py                  render missing segments, then assemble and verify
@@ -9,8 +9,10 @@ usage:
 
 The timeline is split just after each transition, so segment k holds scene k plus the transition
 into scene k+1. A scene therefore appears in its own segment and the one before it, and naming a
-scene re-renders both. Segments are rendered muted from one shared bundle and joined with an H.264
-stream copy. The audio is Remotion's own mix, rendered on its own and cached: it is redone only when the
+scene re-renders both. Segments are rendered muted from one shared bundle as near-lossless mezzanine
+files (CRF 10), then the joined film is encoded once as a single continuous H.264 stream (CRF 18, slow),
+so every frame gets the same quality; joining final-quality segments by stream copy would leave each
+segment's last frame softer, because the encoder spends less on frames nothing later depends on. The audio is Remotion's own mix, rendered on its own and cached: it is redone only when the
 voice, music, sound effects, timeline or composition change. It is mastered to -16 LUFS and muxed in.
 
 Every assembly is verified: the frame count must equal the composition length, and the frames either
@@ -79,12 +81,21 @@ def frame_count(path):
     return int(out)
 
 
-def psnr(video, n, reference):
-    """PSNR between frame index n of `video` (BT.709, limited range) and the PNG `reference`, or None."""
-    graph = (f"[0:v]select=eq(n\\,{n}),scale=in_color_matrix=bt709:in_range=tv:out_range=pc,format=rgb24[a];"
-             "[1:v]format=rgb24[b];[a][b]psnr")
-    r = subprocess.run(["ffmpeg", "-hide_banner", "-i", video, "-i", reference, "-lavfi", graph, "-frames:v", "1", "-f", "null", "-"],
-                       capture_output=True, text=True)
+def extract_frames(video, frames, out_dir):
+    """Decode `video` once and save the given frame indices as PNGs (BT.709, full range). Returns {frame: path}."""
+    frames = sorted(set(frames))
+    expr = "+".join(f"eq(n\\,{f})" for f in frames)
+    pattern = os.path.join(out_dir, "frame-%04d.png")
+    subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", video, "-vf",
+                    f"select='{expr}',scale=in_color_matrix=bt709:in_range=tv:out_range=pc,format=rgb24",
+                    "-vsync", "0", pattern], check=True)
+    return {f: pattern % (k + 1) for k, f in enumerate(frames)}
+
+
+def psnr(a, b):
+    """PSNR in dB between two images of the same size, or None."""
+    r = subprocess.run(["ffmpeg", "-hide_banner", "-i", a, "-i", b, "-lavfi", "[0:v]format=rgb24[x];[1:v]format=rgb24[y];[x][y]psnr",
+                        "-f", "null", "-"], capture_output=True, text=True)
     m = re.search(r"average:(\S+)", r.stderr)
     if not m:
         return None
@@ -120,7 +131,7 @@ def main():
     for i, sid, first, last in t["segments"]:
         if i in wanted:
             remotion("render", bundle, COMP, seg_path(i, sid), f"--frames={first}-{last}", "--muted",
-                     "--codec", "h264", "--crf", "18", "--pixel-format", "yuv420p", "--color-space", "bt709", "--concurrency", "4", *scale)
+                     "--codec", "h264", "--crf", "10", "--pixel-format", "yuv420p", "--color-space", "bt709", "--concurrency", "4", *scale)
 
     stale_after = newest_mtime("src", "public")
     stale = [seg_path(i, sid) for i, sid, _, _ in t["segments"] if os.path.getmtime(os.path.join(ROOT, seg_path(i, sid))) < stale_after]
@@ -146,27 +157,31 @@ def main():
 
     final = os.path.join(base, "adele-care.mp4")
     run(["ffmpeg", "-v", "error", "-y", "-f", "concat", "-safe", "0", "-i", os.path.join(seg_dir, "list.txt"), "-i", audio,
-         "-map", "0:v", "-map", "1:a", "-c:v", "copy", "-af", norm, "-c:a", "aac", "-b:a", "192k", "-shortest",
+         "-map", "0:v", "-map", "1:a", "-c:v", "libx264", "-preset", "slow", "-crf", "18", "-pix_fmt", "yuv420p",
+         "-colorspace", "bt709", "-color_primaries", "bt709", "-color_trc", "bt709", "-color_range", "tv",
+         "-af", norm, "-c:a", "aac", "-b:a", "192k", "-shortest",
          "-movflags", "+faststart", final])
 
     # Verify: exact length, and every join matches a fresh still of the same frame.
     n = frame_count(os.path.join(ROOT, final))
     problems = [] if n == t["total"] else [f"frame count {n}, expected {t['total']}"]
     checks = sorted({f for _, _, first, last in t["segments"] for f in (first, last)})
-    video = os.path.join(ROOT, final)
+    tmp = os.path.join(ROOT, seg_dir, "verify")
+    os.makedirs(tmp, exist_ok=True)
+    decoded = extract_frames(os.path.join(ROOT, final), [g for f in checks for g in (f - 1, f, f + 1) if 0 <= g < n], tmp)
     for f in checks:
-        ref = os.path.join(seg_dir, f"check-{f}.png")
+        ref = os.path.join(tmp, f"still-{f}.png")
         remotion("still", bundle, COMP, ref, f"--frame={f}", *scale)
-        ref_abs = os.path.join(ROOT, ref)
-        here = psnr(video, f, ref_abs)
-        around = [x for x in (psnr(video, f - 1, ref_abs) if f > 0 else None, psnr(video, f + 1, ref_abs) if f + 1 < n else None) if x is not None]
+        here = psnr(decoded[f], ref)
+        around = [x for x in (psnr(decoded[g], ref) for g in (f - 1, f + 1) if g in decoded) if x is not None]
         best_nearby = max(around, default=0.0)
         print(f"frame {f:5d}: {here if here is not None else 'n/a'} dB (neighbours up to {best_nearby:.1f} dB)")
         if here is None or here < MIN_PSNR:
             problems.append(f"frame {f} does not match a direct render ({here} dB)")
         elif here + 0.5 < best_nearby:
             problems.append(f"frame {f} matches a neighbouring frame better ({best_nearby:.1f} vs {here:.1f} dB): shifted join")
-        os.remove(ref_abs)
+    for name in os.listdir(tmp):
+        os.remove(os.path.join(tmp, name))
 
     print(f"\n{final}: {n} frames")
     if stale:
