@@ -211,7 +211,7 @@ const Call: React.FC = () => {
             {v.file === "call_b" && (
               <div style={{ height: 64 * checking, opacity: checking, overflow: "hidden" }}>
                 <Pill style={{ fontSize: 24, padding: "10px 20px", color: C.blue, background: "#EEF5FB", boxShadow: "none" }}>
-                  <Spinner done={f >= cue(FOUND_AT)} /> {f >= cue(FOUND_AT) ? "14:40 with Dr Shah is free" : "Checking today's diary…"}
+                  <Spinner done={f >= cue(FOUND_AT)} /> {f >= cue(FOUND_AT) ? "14:40 with Dr Harris is free" : "Checking today's diary…"}
                 </Pill>
               </div>
             )}
@@ -223,7 +223,7 @@ const Call: React.FC = () => {
               <div style={{ width: 76, height: 76, borderRadius: 38, background: "#DDF7E8", color: "#127A43", display: "grid", placeItems: "center", fontSize: 40, fontWeight: 800 }}>✓</div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 34, fontWeight: 800 }}>Booked · Today 14:40</div>
-                <div style={{ fontSize: 24, color: C.mute }}>Dr Shah · Emergency appointment</div>
+                <div style={{ fontSize: 24, color: C.mute }}>Dr Harris · Emergency appointment</div>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 8, alignItems: "flex-end" }}>
                 <Pill style={{ fontSize: 20, padding: "6px 14px", boxShadow: "none", background: "#F2F5F9" }}>✓ In your PMS</Pill>
@@ -360,7 +360,7 @@ const WhatsApp: React.FC = () => {
           <GlowCard w={760} h={720} glow={0.5}>
             <div style={{ padding: 36 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 24 }}>
-                <div style={{ fontSize: 36, fontWeight: 800 }}>Tomorrow · Dr Shah</div>
+                <div style={{ fontSize: 36, fontWeight: 800 }}>Tomorrow · Dr Harris</div>
                 <div style={{ fontSize: 22, color: C.mute }}>Thursday</div>
               </div>
               {rows.map((r) => (
@@ -455,7 +455,7 @@ const WhatsAppChat: React.FC = () => {
       <div style={{ flex: 1, padding: "22px 18px", display: "flex", flexDirection: "column", gap: 14 }}>
         <div style={{ alignSelf: "center", background: "#E1F2FB", color: "#54656F", fontSize: 18, padding: "6px 14px", borderRadius: 10 }}>Today</div>
         <WaBubble out at={cue(OFFER_AT)} time="09:03" read={read}>
-          Hi Sarah 👋 A 10:20 slot just opened tomorrow with Dr Shah. You asked for an earlier check-up. Would you like it?
+          Hi Sarah 👋 A 10:20 slot just opened tomorrow with Dr Harris. You asked for an earlier check-up. Would you like it?
         </WaBubble>
         {typing && (
           <div style={{ alignSelf: "flex-start", background: "#fff", borderRadius: 18, padding: "16px 20px", display: "flex", gap: 7 }}>

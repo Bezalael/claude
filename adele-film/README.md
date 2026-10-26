@@ -50,7 +50,7 @@ npm run render     # out/adele-care.mp4 (1920x1080, 30fps, H.264, yuv420p)
 
 ## Before external use
 
-- Patient names, phone numbers, "Dr Shah", "Riverside Dental" and the chat timestamps are illustrative placeholders.
+- Patient names, phone numbers, "Dr Harris", "Riverside Dental" and the chat timestamps are illustrative placeholders.
 - The WhatsApp screen is a styled mock-up; check WhatsApp's brand guidelines before external use.
 - The PMS is not named. Confirm partner status before naming one (for example Dentally).
 - Remotion is free for companies of up to 3 people. Larger companies need a Remotion company licence.
