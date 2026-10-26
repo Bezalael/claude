@@ -78,13 +78,14 @@ export const Words: React.FC<{
   gradientWords?: string[];
   color?: string;
   style?: React.CSSProperties;
-}> = ({ text, at = 0, every = 4, size = 120, weight = 700, gradientWords = [], color = C.ink, style }) => {
+  times?: number[]; // explicit frame per word, e.g. synced to the voice; overrides at/every
+}> = ({ text, at = 0, every = 4, size = 120, weight = 700, gradientWords = [], color = C.ink, style, times }) => {
   const f = useCurrentFrame();
   const { fps } = useVideoConfig();
   return (
     <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: `0 ${size * 0.26}px`, ...style }}>
       {text.split(" ").map((w, i) => {
-        const p = spring({ frame: f - at - i * every, fps, config: { damping: 18, stiffness: 120 } });
+        const p = spring({ frame: f - (times?.[i] ?? at + i * every), fps, config: { damping: 18, stiffness: 120 } });
         const grad = gradientWords.includes(w.replace(/[.,]/g, ""));
         return (
           <span

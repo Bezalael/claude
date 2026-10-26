@@ -75,7 +75,7 @@ export const AdeleVideo: React.FC = () => (
     <Audio src={staticFile("music.mp3")} volume={musicVolume} />
     {VO.map((v) => (
       <Sequence key={v.file} from={v.start} name={`vo ${v.file}`}>
-        <Audio src={staticFile(`voiceover/${v.file}.wav`)} />
+        <Audio src={staticFile(`voiceover/${v.file}.mp3`)} />
       </Sequence>
     ))}
     {SFX.map((x, i) => (

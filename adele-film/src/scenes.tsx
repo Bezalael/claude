@@ -8,6 +8,15 @@ import { Blob, Bubble, C, clamp, Dot, GlowCard, GRAD, Pill, Rise, RollList, step
 // Frame numbers are relative to the scene's sequence start, which begins with its incoming transition.
 // `cue(t)` converts an absolute time in seconds (as in timeline.ts) into that frame, so cues stay in sync with the voice.
 
+/** Scene frames at which words [from, to) of a voice line are spoken. */
+const useWordCues = () => {
+  const cue = useCue();
+  return (file: string, from = 0, to?: number) => {
+    const v = VO.find((x) => x.file === file)!;
+    return v.words.slice(from, to).map((w) => cue(v.at + w));
+  };
+};
+
 const Center: React.FC<{ children: React.ReactNode; style?: React.CSSProperties }> = ({ children, style }) => (
   <AbsoluteFill style={{ alignItems: "center", justifyContent: "center", ...style }}>{children}</AbsoluteFill>
 );
@@ -16,21 +25,22 @@ const Center: React.FC<{ children: React.ReactNode; style?: React.CSSProperties 
 const Intro: React.FC = () => {
   const f = useCurrentFrame();
   const cue = useCue();
-  const swap = cue(2.45);
+  const words = useWordCues();
+  const swap = cue(3.1);
   const a = interpolate(f, [swap - 8, swap + 4], [1, 0], clamp);
   const grow = interpolate(f, [0, 180], [0.85, 1.12]);
   return (
     <AbsoluteFill>
       <Blob size={1100 * grow} intensity={interpolate(f, [0, 30], [0, 0.9], clamp)} />
       <Center style={{ opacity: a, filter: `blur(${(1 - a) * 12}px)` }}>
-        <Words text="Your practice was built on care." at={cue(0.6)} every={4} size={140} gradientWords={["care"]} style={{ maxWidth: 1500 }} />
+        <Words text="Your practice was built on care." times={words("hook", 0, 6)} size={140} gradientWords={["care"]} style={{ maxWidth: 1500 }} />
       </Center>
       {f >= swap - 4 && (
         <Center>
-          <Words text="Not on answering" at={swap} every={4} size={140} />
-          <Words text="the phone." at={swap + 14} every={5} size={140} />
-          <Rise at={cue(3.4)} style={{ marginTop: 50 }}>
-            <Ringing at={cue(3.4)} />
+          <Words text="Not on answering" times={words("hook", 6, 9)} size={140} />
+          <Words text="the phone." times={words("hook", 9, 11)} size={140} />
+          <Rise at={cue(4.3)} style={{ marginTop: 50 }}>
+            <Ringing at={cue(4.3)} />
           </Rise>
         </Center>
       )}
@@ -54,13 +64,13 @@ const Problem: React.FC = () => {
   const f = useCurrentFrame();
   const cue = useCue();
   const items = ["Chair is full", "Phone ringing", "Voicemail full", "Recall overdue", "Enquiry missed", "Team stretched"];
-  const act = stepper(f, [0, cue(7.5), cue(8.3), cue(9.0), cue(9.8), cue(10.6)], 9);
+  const act = stepper(f, [0, cue(7.8), cue(8.5), cue(9.4), cue(10.0), cue(10.65)], 9);
   const missed = [
-    { at: cue(6.4), t: "Missed call", s: "07700 900 412 · 09:12", icon: "✆", red: true },
-    { at: cue(7.2), t: "Missed call", s: "07700 900 877 · 09:14", icon: "✆", red: true },
-    { at: cue(8.2), t: "Voicemail (3)", s: "Mailbox nearly full", icon: "◉", red: false },
-    { at: cue(9.0), t: "Recall overdue", s: "38 patients this month", icon: "!", red: false },
-    { at: cue(9.9), t: "New enquiry", s: "Website form · no reply yet", icon: "!", red: false },
+    { at: cue(6.3), t: "Missed call", s: "07700 900 412 · 09:12", icon: "✆", red: true },
+    { at: cue(7.8), t: "Missed call", s: "07700 900 877 · 09:14", icon: "✆", red: true },
+    { at: cue(8.5), t: "Voicemail (3)", s: "Mailbox nearly full", icon: "◉", red: false },
+    { at: cue(9.4), t: "Recall overdue", s: "38 patients this month", icon: "!", red: false },
+    { at: cue(10.1), t: "New enquiry", s: "Website form · no reply yet", icon: "!", red: false },
   ];
   return (
     <AbsoluteFill>
@@ -116,6 +126,7 @@ const LogoScene: React.FC = () => {
   const f = useCurrentFrame();
   const { fps } = useVideoConfig();
   const cue = useCue();
+  const words = useWordCues();
   const punch = spring({ frame: f - cue(12.5), fps, config: { damping: 9, stiffness: 180 } });
   const iconScale = 1 + 0.07 * Math.sin(Math.min(1, punch) * Math.PI);
   const open = interpolate(f, [cue(12.75), cue(13.65)], [0, 1], { ...clamp, easing: Easing.inOut(Easing.cubic) });
@@ -153,7 +164,7 @@ const LogoScene: React.FC = () => {
         </div>
       </div>
       <div style={{ position: "absolute", top: 640, width: "100%", opacity: 1 - outro, filter: `blur(${outro * 10}px)` }}>
-        <Words text="The AI receptionist for UK dental practices." at={cue(14.7)} every={4} size={58} weight={600} gradientWords={["receptionist"]} />
+        <Words text="The AI receptionist for UK dental practices." times={words("intro", 3)} size={58} weight={600} gradientWords={["receptionist"]} />
       </div>
     </AbsoluteFill>
   );
@@ -167,10 +178,10 @@ const TRANSCRIPT: Record<string, { who: "adele" | "patient"; text: string }> = {
   call_c: { who: "adele", text: "Oh no, I'm sorry. I can see you at 2:40 today. Shall I book that?" },
   call_d: { who: "patient", text: "Yes please, perfect." },
 };
-const ANSWER_AT = 21.2;
-const CHECKING_AT = 29.3;
-const FOUND_AT = 30.6;
-const BOOKED_AT = 37.55;
+const ANSWER_AT = 20.85;
+const CHECKING_AT = 29.0;
+const FOUND_AT = 31.9;
+const BOOKED_AT = 37.0;
 
 const Call: React.FC = () => {
   const f = useCurrentFrame();
@@ -192,14 +203,14 @@ const Call: React.FC = () => {
           </GlowCard>
         </Rise>
       </div>
-      <Rise at={cue(20.4)} style={{ position: "absolute", left: 300, top: 990, width: 470, display: "flex", justifyContent: "center" }}>
+      <Rise at={cue(20.0)} style={{ position: "absolute", left: 300, top: 990, width: 470, display: "flex", justifyContent: "center" }}>
         <Pill style={{ fontSize: 26, padding: "10px 22px" }}>
           <Dot size={12} /> {answered ? "Adele answered on the 2nd ring" : "A patient is calling"}
         </Pill>
       </Rise>
 
       <div style={{ position: "absolute", left: 900, top: 110, width: 820, display: "flex", flexDirection: "column", gap: 18 }}>
-        <Rise at={cue(21.0)}>
+        <Rise at={cue(20.7)}>
           <div style={{ display: "flex", alignItems: "center", gap: 14, fontSize: 24, fontWeight: 700, color: C.mute, letterSpacing: 2, textTransform: "uppercase" }}>
             <div style={{ width: 14, height: 14, borderRadius: 7, background: "#FF4D4D", opacity: 0.5 + 0.5 * Math.abs(Math.sin(f / 10)) }} />
             Live call transcript
@@ -207,7 +218,7 @@ const Call: React.FC = () => {
         </Rise>
         {CALL.map((v) => (
           <React.Fragment key={v.file}>
-            <TypedBubble at={cue(v.at)} dur={v.dur} {...TRANSCRIPT[v.file]} />
+            <TypedBubble at={cue(v.at)} words={v.words.map((w) => cue(v.at + w))} {...TRANSCRIPT[v.file]} />
             {v.file === "call_b" && (
               <div style={{ height: 64 * checking, opacity: checking, overflow: "hidden" }}>
                 <Pill style={{ fontSize: 24, padding: "10px 20px", color: C.blue, background: "#EEF5FB", boxShadow: "none" }}>
@@ -243,11 +254,11 @@ const Spinner: React.FC<{ done: boolean }> = ({ done }) => {
   return <div style={{ width: 20, height: 20, borderRadius: 10, border: `3px solid ${C.sky}44`, borderTopColor: C.blue, transform: `rotate(${f * 12}deg)` }} />;
 };
 
-/** Transcript bubble that types itself in word by word across the length of the spoken line. */
-const TypedBubble: React.FC<{ at: number; dur: number; who: "adele" | "patient"; text: string }> = ({ at, dur, who, text }) => {
+/** Live transcript bubble: each word appears as it is spoken (`words` holds the frame of each word). */
+const TypedBubble: React.FC<{ at: number; words: number[]; who: "adele" | "patient"; text: string }> = ({ at, words: cues, who, text }) => {
   const f = useCurrentFrame();
   const words = text.split(" ");
-  const n = Math.ceil(interpolate(f, [at, at + dur * 30 * 0.92], [0, words.length], clamp));
+  const n = cues.filter((c) => f >= c).length;
   if (f < at) return null;
   return (
     <Bubble from={who} at={at} size={32}>
@@ -327,18 +338,18 @@ const OnCall: React.FC<{ speaking?: string; since: number; booked: number }> = (
 /* 38.5-52.5s  "When a patient cancels, I offer the slot on WhatsApp to someone waiting for an earlier visit, and move them in." */
 const WA = { header: "#075E54", accent: "#128C7E", wall: "#EFE7DD", out: "#DCF8C6", tick: "#34B7F1" };
 const CANCEL_AT = 38.9;
-const OFFER_AT = 40.6;
-const TYPING_AT = 42.4;
-const REPLY_AT = 43.6;
-const DONE_AT = 44.8;
-const FILLED_AT = 45.5;
+const OFFER_AT = 41.6;
+const TYPING_AT = 43.3;
+const REPLY_AT = 44.4;
+const DONE_AT = 45.4;
+const FILLED_AT = 46.0;
 
 const WhatsApp: React.FC = () => {
   const f = useCurrentFrame();
   const cue = useCue();
   const cancel = useIn(cue(CANCEL_AT), 14);
   const filled = useIn(cue(FILLED_AT), 12);
-  const toastOut = interpolate(f, [cue(41.6), cue(42.2)], [0, 1], clamp);
+  const toastOut = interpolate(f, [cue(42.2), cue(42.8)], [0, 1], clamp);
   const rows = [
     { t: "09:00", n: "Aisha K. · Filling" },
     { t: "09:40", n: "Tom W. · Check-up" },
@@ -372,7 +383,7 @@ const WhatsApp: React.FC = () => {
       </div>
       <div style={{ position: "absolute", left: 150, top: 960, display: "flex", gap: 14 }}>
         {["✓ Gap filled", "✓ Waitlist updated", "✓ Saved to your PMS"].map((c, i) => (
-          <Rise key={c} at={cue(46.3) + i * 6} dist={20}>
+          <Rise key={c} at={cue(46.8) + i * 6} dist={20}>
             <Pill style={{ fontSize: 24, padding: "10px 20px" }}>{c}</Pill>
           </Rise>
         ))}
@@ -517,7 +528,7 @@ const CLOSE = 18;
 const Clock: React.FC = () => {
   const f = useCurrentFrame();
   const cue = useCue();
-  const h = interpolate(f, [cue(74.4), cue(79.6)], [7.2, 22.8], { ...clamp, easing: Easing.inOut(Easing.sin) });
+  const h = interpolate(f, [cue(74.4), cue(75.6), cue(77.8), cue(79.9)], [7.2, 8.6, 18.7, 22.8], { ...clamp, easing: Easing.inOut(Easing.quad) });
   const hh = String(Math.floor(h)).padStart(2, "0");
   const mm = String(Math.floor((h % 1) * 60)).padStart(2, "0");
   const open = h >= OPEN && h < CLOSE;
@@ -583,7 +594,7 @@ const Hub: React.FC = () => {
   const cx = 860;
   const cy = 560;
   const chans = ["📞 Calls", "💬 WhatsApp", "🌐 Web chat", "✉️ Email", "📱 SMS"];
-  const pms = useIn(cue(56.6), 14);
+  const pms = useIn(cue(56.7), 14);
   const flow = (f % 40) / 40;
   return (
     <AbsoluteFill>
@@ -716,7 +727,7 @@ const ListScene: React.FC = () => {
     "Following up treatment plans",
     "Filling a cancellation",
   ];
-  const act = stepper(f, [0, cue(69.7), cue(70.9), cue(71.7), cue(72.9)], 10);
+  const act = stepper(f, [0, cue(69.8), cue(71.1), cue(72.1)], 10);
   return (
     <AbsoluteFill>
       <Blob x={1500} y={300} size={520} intensity={0.35} />
@@ -735,14 +746,14 @@ const Cta: React.FC = () => {
   const f = useCurrentFrame();
   const cue = useCue();
   const typed = "adelecare.co.uk";
-  const n = Math.floor(interpolate(f, [cue(84.6), cue(86.4)], [0, typed.length], clamp));
-  const pill = useIn(cue(83.4), 14);
-  const press = interpolate(f, [cue(86.6), cue(86.85), cue(87.15)], [1, 0.9, 1], clamp);
-  const outro = useIn(cue(86.9), 16);
-  const url = useIn(cue(88.3), 16);
+  const n = Math.floor(interpolate(f, [cue(84.9), cue(86.8)], [0, typed.length], clamp));
+  const pill = useIn(cue(83.3), 14);
+  const press = interpolate(f, [cue(87.0), cue(87.25), cue(87.55)], [1, 0.9, 1], clamp);
+  const outro = useIn(cue(87.2), 16);
+  const url = useIn(cue(88.6), 16);
   return (
     <AbsoluteFill>
-      <Blob size={1000} intensity={interpolate(f, [0, 30, cue(86.7), cue(87.7)], [0.2, 0.85, 0.85, 0.3], clamp)} />
+      <Blob size={1000} intensity={interpolate(f, [0, 30, cue(87.0), cue(88.0)], [0.2, 0.85, 0.85, 0.3], clamp)} />
       <Center style={{ opacity: 1 - outro, filter: `blur(${outro * 14}px)` }}>
         <Words text="See Adele on a real practice day." at={cue(80.75)} every={5} size={100} gradientWords={["real"]} style={{ maxWidth: 1800 }} />
         <div style={{ height: 70 }} />
@@ -770,9 +781,9 @@ const Cta: React.FC = () => {
           </div>
         </div>
       </Center>
-      {f >= cue(86.8) && (
+      {f >= cue(87.1) && (
         <Center>
-          <LogoReveal at={cue(87.0)} height={120} />
+          <LogoReveal at={cue(87.3)} height={120} />
           <div style={{ marginTop: 44, fontSize: 40, fontWeight: 600, color: C.mute, opacity: url, transform: `translateY(${(1 - url) * 16}px)` }}>adelecare.co.uk</div>
         </Center>
       )}

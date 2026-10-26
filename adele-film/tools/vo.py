@@ -1,9 +1,9 @@
-"""Generate the voiceover and phone-call dialogue with Kokoro (Apache 2.0).
+"""Offline fallback voiceover with Kokoro (Apache 2.0), for drafts without Creative Claw credits.
 
 usage: python tools/vo.py <model_dir>
-Writes public/voiceover/<key>.wav and prints each line's duration for src/timeline.ts.
-Adele narrates in the first person and speaks on the call; the patient is a second voice
-band-limited to sound like a phone line.
+Writes public/voiceover-kokoro/<key>.wav and prints each line's duration. The film itself uses the
+ElevenLabs v4 lines in public/voiceover/ (see README); to use these instead, point AdeleVideo.tsx at
+this folder and update the lengths and word timings in src/timeline.ts.
 """
 import os
 import subprocess
@@ -33,10 +33,10 @@ lines = [
 
 model_dir = sys.argv[1]
 k = Kokoro(os.path.join(model_dir, "kokoro-v1.0.onnx"), os.path.join(model_dir, "voices-v1.0.bin"))
-os.makedirs("public/voiceover", exist_ok=True)
+os.makedirs("public/voiceover-kokoro", exist_ok=True)
 for key, (voice, speed), text, phone in lines:
     samples, sr = k.create(text, voice=voice, speed=speed, lang="en-gb")
-    out = f"public/voiceover/{key}.wav"
+    out = f"public/voiceover-kokoro/{key}.wav"
     sf.write(out, samples, sr)
     if phone:
         tmp = out + ".tmp.wav"

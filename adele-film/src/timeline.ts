@@ -18,30 +18,31 @@ export const SCENES = [
   { id: "cta", from: 80.5, to: 90 },
 ].map((x) => ({ ...x, start: s(x.from), dur: s(x.to - x.from) }));
 
-// Voice lines (public/voiceover/<file>.wav): start (seconds) and length, from tools/vo.py.
-// Adele narrates in the first person; call_b and call_d are the patient on the phone.
+// Voice lines (public/voiceover/<file>.mp3): start (seconds) and length. Generated with ElevenLabs v4 through
+// Creative Claw: Adele is "Juliet", the patient on the call ("call_b", "call_d") is "Ollie", phone-filtered.
+// `words` are each word's start (seconds into the line) from the generation's word timings; scenes cue off them.
 export const VO = [
-  { file: "hook", at: 0.6, dur: 3.31 },
-  { file: "problem", at: 6.0, dur: 4.27 },
-  { file: "intro", at: 13.2, dur: 4.2 },
-  { file: "call_a", at: 21.4, dur: 3.61 },
-  { file: "call_b", at: 25.8, dur: 3.18 },
-  { file: "call_c", at: 29.9, dur: 3.82 },
-  { file: "call_d", at: 35.1, dur: 1.75 },
-  { file: "whatsapp", at: 39.3, dur: 5.67 },
-  { file: "hub", at: 53.2, dur: 4.2 },
-  { file: "confirm", at: 60.1, dur: 4.63 },
-  { file: "list", at: 67.7, dur: 4.57 },
-  { file: "clock", at: 74.6, dur: 3.52 },
-  { file: "cta", at: 81.2, dur: 5.18 },
+  { file: "hook", at: 0.4, dur: 4.52, words: [0, 0.32, 0.96, 1.32, 1.52, 1.76, 2.8, 3.04, 3.24, 3.68, 3.84] },
+  { file: "problem", at: 5.8, dur: 6.19, words: [0, 0.2, 0.32, 0.72, 0.96, 1.76, 2.0, 2.24, 2.56, 3.36, 3.6, 4.16, 4.64, 4.76, 4.88, 5.2, 5.36] },
+  { file: "intro", at: 13.2, dur: 4.91, words: [0.46, 0.72, 0.88, 1.68, 2.0, 2.24, 3.12, 3.28, 3.68, 4.04] },
+  { file: "call_a", at: 21.0, dur: 4.13, words: [0.08, 0.32, 0.88, 1.4, 2.24, 2.4, 2.56, 3.2, 3.36, 3.52, 3.6] },
+  { file: "call_b", at: 25.4, dur: 3.55, words: [0, 0.76, 1.12, 1.44, 1.64, 2.4, 2.56, 2.72, 2.88, 3.12] },
+  { file: "call_c", at: 29.3, dur: 5.96, words: [0.24, 0.64, 1.36, 1.68, 2.88, 3.04, 3.2, 3.32, 3.44, 3.6, 4.24, 4.96, 5.2, 5.36, 5.52] },
+  { file: "call_d", at: 35.6, dur: 2.35, words: [0.16, 0.56, 1.44] },
+  { file: "whatsapp", at: 39.3, dur: 6.77, words: [] as number[] },
+  { file: "hub", at: 53.2, dur: 5.25, words: [] as number[] },
+  { file: "confirm", at: 60.1, dur: 5.64, words: [] as number[] },
+  { file: "list", at: 67.5, dur: 5.96, words: [] as number[] },
+  { file: "clock", at: 74.6, dur: 5.41, words: [] as number[] },
+  { file: "cta", at: 80.9, dur: 6.19, words: [] as number[] },
 ].map((v) => ({ ...v, start: s(v.at) }));
 
 export const SFX = [
-  { file: "ring", at: 19.6, volume: 0.55 },
-  { file: "chime", at: 37.6, volume: 0.6 },
+  { file: "ring", at: 19.7, volume: 0.55 },
+  { file: "chime", at: 37.05, volume: 0.6 }, // booked
   { file: "pop", at: 38.9, volume: 0.5 }, // cancellation arrives
-  { file: "pop", at: 40.6, volume: 0.45 }, // Adele's WhatsApp offer
-  { file: "pop", at: 43.6, volume: 0.45 }, // patient replies
-  { file: "pop", at: 44.8, volume: 0.45 }, // Adele confirms
-  { file: "chime", at: 45.5, volume: 0.5 }, // gap filled
+  { file: "pop", at: 41.6, volume: 0.45 }, // Adele's WhatsApp offer
+  { file: "pop", at: 44.4, volume: 0.45 }, // patient replies
+  { file: "pop", at: 45.4, volume: 0.45 }, // Adele confirms
+  { file: "chime", at: 46.0, volume: 0.5 }, // gap filled
 ].map((x) => ({ ...x, start: s(x.at) }));

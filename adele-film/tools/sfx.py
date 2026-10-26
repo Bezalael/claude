@@ -12,9 +12,9 @@ def tvec(d):
     return np.arange(int(d * SR)) / SR
 
 
-# UK ring cadence: 0.4s on, 0.2s off, 0.4s on, using 400 + 450 Hz. One full double ring, then a second cut short by the answer.
-ring = np.zeros(int(1.75 * SR))
-for start, dur in [(0.0, 0.4), (0.6, 0.4), (1.3, 0.4)]:
+# UK ring cadence: 0.4s on, 0.2s off, 0.4s on, using 400 + 450 Hz. One double ring, then Adele picks up.
+ring = np.zeros(int(1.1 * SR))
+for start, dur in [(0.0, 0.4), (0.6, 0.4)]:
     t = tvec(dur)
     tone = (np.sin(2 * np.pi * 400 * t) + np.sin(2 * np.pi * 450 * t)) * 0.5
     env = np.minimum(1, t / 0.01) * np.minimum(1, (dur - t) / 0.01)

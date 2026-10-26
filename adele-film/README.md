@@ -22,14 +22,13 @@ npm run render     # out/adele-care.mp4 (1920x1080, 30fps, H.264, yuv420p)
 
 ## Audio
 
-- Voice: `tools/vo.py` uses Kokoro (Apache 2.0). Adele narrates in the first person with British voice `bf_emma`. The patient on the call is `bm_george`, filtered to sound like a phone line.
+- Voice: ElevenLabs v4 generated through Creative Claw. Adele narrates in the first person as "Juliet" (`QJksobp1edMNvmwcG5lm`); the patient on the call is "Ollie" (`jRAAK67SEFE9m7ci5DhD`), filtered to sound like a phone line (`highpass=f=320,lowpass=f=3300` plus light compression in ffmpeg). Files are in `public/voiceover/`; each line's start, length and per-word timings are in `VO` in `src/timeline.ts`, and the on-screen words and live transcript cue off those timings.
+- Offline fallback: `tools/vo.py` voices the same script with Kokoro (Apache 2.0) into `public/voiceover-kokoro/` for drafts.
   ```
   pip install kokoro-onnx soundfile
   # download kokoro-v1.0.onnx and voices-v1.0.bin (huggingface.co/fastrtc/kokoro-onnx) into <model_dir>
   python tools/vo.py <model_dir>
   ```
-  If a line's length changes, update it in `VO` in `src/timeline.ts`. Scene slots already leave room for the slower ElevenLabs takes.
-- ElevenLabs: `voiceover-elevenlabs/` holds 10 of the 13 lines voiced by "Juliet" (Adele) and "Ollie" (patient) with `eleven_v4`. The account's free tier was disabled mid-run, so `call_b`, `call_c` and `hub` are still missing, and the free tier doesn't allow commercial use anyway. Once the account is on a paid plan, generate those three, move the files into `public/voiceover/`, filter the patient lines like `vo.py` does, and update `VO` in `src/timeline.ts` (file names and lengths).
 - Music: `tools/music.py` composes an original 120 BPM track in code (no licence or attribution needed). It goes soft under the phone call, breaks down under the clock and drops again for the call to action; every cut lands on a beat. Convert its WAV to `public/music.mp3` with ffmpeg (see the script header).
 - Sound effects: `tools/sfx.py` makes the UK phone ring, the "booked" chime and the chat message pop.
 
