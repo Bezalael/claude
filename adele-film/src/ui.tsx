@@ -1,6 +1,5 @@
 import React, { createContext, useContext } from "react";
 import { AbsoluteFill, interpolate, spring, useCurrentFrame, useVideoConfig, Easing } from "remotion";
-import { OVERLAP } from "./timeline";
 
 // Adele Care brand: navy and blue for the mark and "Adele", orange for "Care".
 export const C = {
@@ -18,42 +17,17 @@ export const C = {
   violet: "#4A9AD0",
 };
 export const FONT = "'Plus Jakarta Sans', system-ui, sans-serif";
-export const BRAND_FONT = "'Urbanist', 'Plus Jakarta Sans', sans-serif";
 export const GRAD = `linear-gradient(100deg, ${C.navy}, ${C.blue} 35%, ${C.sky} 65%, ${C.orange})`;
 
-/** Each scene can run its animation clock faster than real time (see SCENES in timeline.ts). */
-export const SpeedContext = createContext(1);
-export const useFrame = () => {
-  const f = useCurrentFrame();
-  return f * useContext(SpeedContext);
+/** Absolute start time (seconds) of the current scene's sequence, so scenes can cue off voice timings. */
+export const SceneStart = createContext(0);
+/** Frame within the current scene at which absolute time `at` (seconds) falls. */
+export const useCue = () => {
+  const start = useContext(SceneStart);
+  return (at: number) => Math.round((at - start) * 30);
 };
 
 const clamp = { extrapolateLeft: "clamp", extrapolateRight: "clamp" } as const;
-
-/** Soft blur/scale crossfade in and out of every scene. */
-export const SceneShell: React.FC<{ dur: number; first?: boolean; last?: boolean; children: React.ReactNode }> = ({
-  dur,
-  first,
-  last,
-  children,
-}) => {
-  const f = useCurrentFrame();
-  const inP = first ? 1 : interpolate(f, [0, OVERLAP], [0, 1], { ...clamp, easing: Easing.out(Easing.cubic) });
-  const outP = last ? 0 : interpolate(f, [dur - OVERLAP, dur], [0, 1], { ...clamp, easing: Easing.in(Easing.cubic) });
-  return (
-    <AbsoluteFill
-      style={{
-        opacity: inP * (1 - outP),
-        filter: `blur(${(1 - inP) * 14 + outP * 14}px)`,
-        transform: `scale(${1.04 - 0.04 * inP - 0.03 * outP})`,
-        fontFamily: FONT,
-        color: C.ink,
-      }}
-    >
-      {children}
-    </AbsoluteFill>
-  );
-};
 
 /** Animated gradient cloud, the reference film's signature glow. */
 export const Blob: React.FC<{ x?: number; y?: number; size?: number; intensity?: number; spin?: number }> = ({
@@ -63,7 +37,7 @@ export const Blob: React.FC<{ x?: number; y?: number; size?: number; intensity?:
   intensity = 1,
   spin = 1,
 }) => {
-  const f = useFrame();
+  const f = useCurrentFrame();
   const t = (f / 30) * spin;
   const parts = [
     // mostly brand blue with an orange accent; kept apart so they don't blend to brown
@@ -105,7 +79,7 @@ export const Words: React.FC<{
   color?: string;
   style?: React.CSSProperties;
 }> = ({ text, at = 0, every = 4, size = 120, weight = 700, gradientWords = [], color = C.ink, style }) => {
-  const f = useFrame();
+  const f = useCurrentFrame();
   const { fps } = useVideoConfig();
   return (
     <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: `0 ${size * 0.26}px`, ...style }}>
@@ -138,7 +112,7 @@ export const Words: React.FC<{
 
 /** Fade-and-lift in for any element. */
 export const useIn = (at: number, damping = 16) => {
-  const f = useFrame();
+  const f = useCurrentFrame();
   const { fps } = useVideoConfig();
   return spring({ frame: f - at, fps, config: { damping, stiffness: 110 } });
 };
@@ -224,7 +198,7 @@ export const GlowCard: React.FC<{ w: number; h: number; glow?: number; style?: R
   style,
   children,
 }) => {
-  const f = useFrame();
+  const f = useCurrentFrame();
   return (
     <div style={{ position: "relative", width: w, height: h, ...style }}>
       <div
@@ -307,7 +281,7 @@ export const Bubble: React.FC<{ from: "patient" | "adele"; at: number; children:
 };
 
 export const Typing: React.FC = () => {
-  const f = useFrame();
+  const f = useCurrentFrame();
   return (
     <div style={{ alignSelf: "flex-start", display: "flex", gap: 8, padding: "20px 24px", borderRadius: 28, background: "#F2F1F6" }}>
       {[0, 1, 2].map((i) => (
@@ -316,13 +290,5 @@ export const Typing: React.FC = () => {
     </div>
   );
 };
-
-/** AdeleCare wordmark. Swap for the supplied logo files once they are in public/brand/. */
-export const Logo: React.FC<{ size?: number; dark?: boolean }> = ({ size = 160, dark = false }) => (
-  <div style={{ fontFamily: BRAND_FONT, fontSize: size, fontWeight: 700, letterSpacing: -size * 0.02, lineHeight: 1, whiteSpace: "nowrap" }}>
-    <span style={{ color: dark ? "#fff" : C.blue }}>Adele</span>
-    <span style={{ color: dark ? C.peach : C.orange }}>Care</span>
-  </div>
-);
 
 export { clamp };
