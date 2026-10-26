@@ -164,6 +164,9 @@ def main():
     else:
         run(["ffmpeg", "-v", "error", "-y", "-f", "concat", "-safe", "0", "-i", os.path.join(seg_dir, "list.txt"), "-i", audio,
              "-map", "0:v", "-map", "1:a", "-c:v", "libx264", "-preset", "slow", "-crf", "18", "-pix_fmt", "yuv420p",
+             # level 4.0 keeps 1080p playable on phones and in-app players; unconstrained, the slow
+             # preset's extra reference frames push it to level 5.0, which many devices refuse
+             "-profile:v", "high", "-level:v", "4.0",
              "-colorspace", "bt709", "-color_primaries", "bt709", "-color_trc", "bt709", "-color_range", "tv",
              "-af", norm, "-c:a", "aac", "-b:a", "192k", "-shortest",
              "-movflags", "+faststart", final])
@@ -171,6 +174,10 @@ def main():
     # Verify: exact length, and every join matches a fresh still of the same frame.
     n = frame_count(os.path.join(ROOT, final))
     problems = [] if n == t["total"] else [f"frame count {n}, expected {t['total']}"]
+    probe = json.loads(subprocess.run(["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries", "stream=profile,level,pix_fmt",
+                                       "-of", "json", os.path.join(ROOT, final)], check=True, capture_output=True, text=True).stdout)["streams"][0]
+    if probe.get("profile") != "High" or probe.get("level", 99) > 41 or probe.get("pix_fmt") != "yuv420p":
+        problems.append(f"not broadly playable: {probe} (want High profile, level 4.1 or lower, yuv420p)")
     checks = sorted({f for _, _, first, last in t["segments"] for f in (first, last)})
     tmp = os.path.join(ROOT, seg_dir, "verify")
     os.makedirs(tmp, exist_ok=True)
