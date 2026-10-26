@@ -17,8 +17,9 @@ voice, music, sound effects, timeline or composition change. It is mastered to -
 
 Every assembly is verified: the frame count must equal the composition length, and the frames either
 side of each join are compared (PSNR, by exact frame index, BT.709) against a fresh still. A join passes
-when the expected frame is the best match among its neighbours (nothing shifted or swapped) and clears
-a codec-tolerance floor. Segments older than the latest change under src/ or public/ are reported as
+when the frame clears a codec-tolerance floor and no neighbouring frame matches the still clearly better;
+a neighbour only counts when it differs from the frame itself by more than codec noise, since at the
+still end of a transition adjacent frames are near-identical and cannot reveal a shift. Segments older than the latest change under src/ or public/ are reported as
 possibly stale.
 """
 import argparse
@@ -157,11 +158,15 @@ def main():
             f":measured_thresh={m['input_thresh']}:offset={m['target_offset']}:linear=true,aresample=48000")
 
     final = os.path.join(base, "adele-care.mp4")
-    run(["ffmpeg", "-v", "error", "-y", "-f", "concat", "-safe", "0", "-i", os.path.join(seg_dir, "list.txt"), "-i", audio,
-         "-map", "0:v", "-map", "1:a", "-c:v", "libx264", "-preset", "slow", "-crf", "18", "-pix_fmt", "yuv420p",
-         "-colorspace", "bt709", "-color_primaries", "bt709", "-color_trc", "bt709", "-color_range", "tv",
-         "-af", norm, "-c:a", "aac", "-b:a", "192k", "-shortest",
-         "-movflags", "+faststart", final])
+    inputs = [os.path.join(ROOT, seg_path(i, sid)) for i, sid, _, _ in t["segments"]] + [audio_abs]
+    if os.path.exists(os.path.join(ROOT, final)) and os.path.getmtime(os.path.join(ROOT, final)) > max(map(os.path.getmtime, inputs)):
+        print("segments and audio unchanged since the last encode; reusing", final)
+    else:
+        run(["ffmpeg", "-v", "error", "-y", "-f", "concat", "-safe", "0", "-i", os.path.join(seg_dir, "list.txt"), "-i", audio,
+             "-map", "0:v", "-map", "1:a", "-c:v", "libx264", "-preset", "slow", "-crf", "18", "-pix_fmt", "yuv420p",
+             "-colorspace", "bt709", "-color_primaries", "bt709", "-color_trc", "bt709", "-color_range", "tv",
+             "-af", norm, "-c:a", "aac", "-b:a", "192k", "-shortest",
+             "-movflags", "+faststart", final])
 
     # Verify: exact length, and every join matches a fresh still of the same frame.
     n = frame_count(os.path.join(ROOT, final))
@@ -176,13 +181,19 @@ def main():
     for f in checks:
         ref = refs[f]
         here = psnr(decoded[f], ref)
-        around = [x for x in (psnr(decoded[g], ref) for g in (f - 1, f + 1) if g in decoded) if x is not None]
-        best_nearby = max(around, default=0.0)
-        print(f"frame {f:5d}: {here if here is not None else 'n/a'} dB (neighbours up to {best_nearby:.1f} dB)")
+        # a neighbour is evidence of a shift only if it matches the still clearly better AND is itself
+        # clearly different from this frame (otherwise the two are the same picture up to codec noise)
+        suspects = []
+        for g in (f - 1, f + 1):
+            if g in decoded:
+                score, apart = psnr(decoded[g], ref), psnr(decoded[g], decoded[f])
+                if score is not None and here is not None and score > here + 0.5 and apart is not None and apart < here:
+                    suspects.append((g, score, apart))
+        print(f"frame {f:5d}: {here if here is not None else 'n/a'} dB" + (f"  suspect neighbours {suspects}" if suspects else ""))
         if here is None or here < MIN_PSNR:
             problems.append(f"frame {f} does not match a direct render ({here} dB)")
-        elif here + 0.5 < best_nearby:
-            problems.append(f"frame {f} matches a neighbouring frame better ({best_nearby:.1f} vs {here:.1f} dB): shifted join")
+        elif suspects:
+            problems.append(f"frame {f}: neighbour {suspects[0][0]} matches its render better and is a different picture: shifted join")
     for name in os.listdir(tmp):
         os.remove(os.path.join(tmp, name))
 
