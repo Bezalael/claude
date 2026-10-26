@@ -18,6 +18,23 @@ export const SCENES = [
   { id: "cta", from: 80.5, to: 90 },
 ].map((x) => ({ ...x, start: s(x.from), dur: s(x.to - x.from) }));
 
+// One transition per cut, in scene order (presentations are assigned in AdeleVideo.tsx). Each window is
+// centred on its cut unless `anchor` (the share of the window before the cut) says otherwise.
+export const CUTS: { at: number; frames: number; anchor?: number }[] = [
+  { at: 5.5, frames: 18 },
+  { at: 12.5, frames: 22, anchor: 1 },
+  { at: 19.5, frames: 26 },
+  { at: 38.5, frames: 16 },
+  { at: 52.5, frames: 24 },
+  { at: 59.5, frames: 22 },
+  { at: 67, frames: 16 },
+  { at: 74, frames: 30 },
+  { at: 80.5, frames: 18 },
+];
+
+/** Frames of a transition window that fall before its cut. */
+export const framesBefore = (c: { frames: number; anchor?: number }) => Math.round(c.frames * (c.anchor ?? 0.5));
+
 // Voice lines (public/voiceover/<file>.mp3): start (seconds) and length. Generated with ElevenLabs v4 through
 // Creative Claw: Adele is "Juliet", the patient on the call ("call_b", "call_d") is "Ollie", phone-filtered.
 // `words` are each word's start (seconds into the line) from the generation's word timings; scenes cue off them.
@@ -46,3 +63,22 @@ export const SFX = [
   { file: "pop", at: 45.4, volume: 0.45 }, // Adele confirms
   { file: "chime", at: 46.0, volume: 0.5 }, // gap filled
 ].map((x) => ({ ...x, start: s(x.at) }));
+
+/** Piecewise-linear interpolation, clamped at both ends (as Remotion's interpolate with clamp). */
+const ramp = (x: number, xs: number[], ys: number[]) => {
+  if (x <= xs[0]) return ys[0];
+  for (let i = 1; i < xs.length; i++) {
+    if (x <= xs[i]) return ys[i - 1] + ((ys[i] - ys[i - 1]) * (x - xs[i - 1])) / (xs[i] - xs[i - 1]);
+  }
+  return ys[ys.length - 1];
+};
+
+/** Music volume at frame f: around 0.32, ducking to 0.12 while anyone speaks, faded in and out. Used by the
+ * composition and by tools/render.py's fast audio mix, so both mixes follow the same curve. */
+export const musicVolume = (f: number) => {
+  const t = f / FPS;
+  let duck = 0;
+  for (const v of VO) duck = Math.max(duck, ramp(t, [v.at - 0.35, v.at, v.at + v.dur, v.at + v.dur + 0.6], [0, 1, 1, 0]));
+  const fade = ramp(f, [0, FPS, TOTAL - 2 * FPS, TOTAL], [0, 1, 1, 0]);
+  return (0.32 - 0.2 * duck) * fade;
+};

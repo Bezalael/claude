@@ -40,16 +40,18 @@ npm run render     # out/adele-care.mp4 (1920x1080, 30fps, H.264, yuv420p)
 | 5.5-12.5s | Rolling list of pressures, phone filling with missed calls | But the chair is full, the phone keeps ringing, and recalls slip when the team is stretched. |
 | 12.5-19.5s | The day shrinks into the app icon, which opens into the logo | Hi, I'm Adele. The AI receptionist for UK dental practices. |
 | 19.5-38.5s | A patient calls. Adele answers, checks the diary and books them, with a live transcript | (the call itself) |
-| 38.5-52.5s | A cancellation leaves a gap; Adele offers it on WhatsApp to a waitlisted patient and moves her in | When a patient cancels, I offer the slot on WhatsApp to someone waiting for an earlier visit, and move them in. |
-| 52.5-59.5s | Channels orbiting Adele, flowing into "Your PMS" | I answer calls, WhatsApp and web chat, and book straight into your PMS. |
+| 38.5-52.5s | A cancellation leaves a gap in tomorrow's diary; Adele offers it on WhatsApp to Sarah, who joined the waitlist on Monday, and moves her in | When a patient cancels, I offer the slot on WhatsApp to someone waiting for an earlier visit, and move them in. |
+| 52.5-59.5s | Calls, WhatsApp and web chat orbiting Adele, flowing into "Your PMS" | I answer calls, WhatsApp and web chat, and book straight into your PMS. |
 | 59.5-67s | Confirmations list, one exception flagged | I ask every patient to confirm. Your team only steps in if there's no reply. |
 | 67-74s | Rolling list of outreach tasks | And I work your patient list too. Missed enquiries, recalls, and lapsed patients. |
-| 74-80.5s | Clock runs 07:12 to 22:47; calls answered before opening and after closing | Before the doors open, and long after they close, I'm still answering. |
+| 74-80.5s | Clock runs 07:12 to 22:48; calls answered before opening and after closing | Before the doors open, and long after they close, I'm still answering. |
 | 80.5-90s | Typed URL, apply button, logo builds itself | See me on a real practice day. Apply for a pilot place at adelecare.co.uk. |
 
 ## Before external use
 
-- Patient names, phone numbers, "Dr Harris", "Riverside Dental" and the chat timestamps are illustrative placeholders.
+- Patient names, "Dr Harris", "Riverside Dental" and the chat timestamps are illustrative placeholders. Phone numbers use Ofcom's 07700 900xxx range reserved for drama.
+- Story continuity: the opening phone reads Tuesday 09:15, so "tomorrow" in the diary and confirmations is Wednesday; the 09:12 missed caller is the patient who rings back and gets booked.
 - The WhatsApp screen is a styled mock-up; check WhatsApp's brand guidelines before external use.
+- Voice lines were generated through Creative Claw; confirm its terms cover commercial use.
 - The PMS is not named. Confirm partner status before naming one (for example Dentally).
 - Remotion is free for companies of up to 3 people. Larger companies need a Remotion company licence.
