@@ -3,10 +3,11 @@
   "private": true,
   "scripts": {
     "dev": "remotion studio",
-    "render": "remotion render AdeleCare out/adele-care-90s.mp4 --codec=h264 --crf=18 --pixel-format=yuv420p"
+    "render": "remotion render AdeleCare out/adele-care-60s.mp4 --codec=h264 --crf=18 --pixel-format=yuv420p"
   },
   "dependencies": {
     "@fontsource/plus-jakarta-sans": "^5.2.5",
+    "@fontsource/urbanist": "^5.2.5",
     "@remotion/cli": "4.0.539",
     "@remotion/google-fonts": "4.0.539",
     "@remotion/transitions": "4.0.539",

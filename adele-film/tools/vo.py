@@ -23,7 +23,6 @@ lines = [
     "Every channel runs through one assistant, and straight into your P M S.",
     "She asks every patient to confirm. Your team only steps in if there's still no reply.",
     "And she works your patient list too. Missed enquiries, recalls, and lapsed patients.",
-    "Before the doors open, and long after they close.",
     "See Adele on a real practice day. Apply for a pilot place at adelecare dot co dot uk.",
 ]
 os.makedirs("public/voiceover", exist_ok=True)

@@ -1,6 +1,6 @@
 import { AbsoluteFill, Audio, interpolate, Sequence, staticFile } from "remotion";
 import { Scenes } from "./scenes";
-import { SceneShell } from "./ui";
+import { SceneShell, SpeedContext } from "./ui";
 import { FPS, OVERLAP, SCENES, TOTAL, VO } from "./timeline";
 
 // Music sits around 0.32 and ducks to 0.14 while Adele is speaking.
@@ -25,7 +25,9 @@ export const AdeleVideo: React.FC = () => (
       return (
         <Sequence key={sc.id} from={sc.start} durationInFrames={sc.dur + (last ? 0 : OVERLAP)} name={sc.id}>
           <SceneShell dur={sc.dur + (last ? 0 : OVERLAP)} first={i === 0} last={last}>
-            <Scene />
+            <SpeedContext.Provider value={sc.speed}>
+              <Scene />
+            </SpeedContext.Provider>
           </SceneShell>
         </Sequence>
       );

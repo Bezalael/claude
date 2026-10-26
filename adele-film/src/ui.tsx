@@ -1,19 +1,32 @@
-import React from "react";
+import React, { createContext, useContext } from "react";
 import { AbsoluteFill, interpolate, spring, useCurrentFrame, useVideoConfig, Easing } from "remotion";
 import { OVERLAP } from "./timeline";
 
+// Adele Care brand: navy and blue for the mark and "Adele", orange for "Care".
 export const C = {
-  ink: "#0E0E14",
-  grey: "#C9C9D2",
-  mute: "#7B7B88",
-  bg: "#FBFBFD",
-  pink: "#FF3D9A",
-  orange: "#FF8A3D",
-  blue: "#4F6BFF",
-  violet: "#9B5CFF",
+  ink: "#0F1B2D",
+  grey: "#C9CED6",
+  mute: "#6F7A89",
+  bg: "#FBFCFD",
+  navy: "#12304F",
+  blue: "#1F5F96",
+  sky: "#4A9AD0",
+  orange: "#E0732A",
+  peach: "#F2A766",
+  // kept as aliases so blobs and glows read in brand colours
+  pink: "#E0732A",
+  violet: "#4A9AD0",
 };
 export const FONT = "'Plus Jakarta Sans', system-ui, sans-serif";
-export const GRAD = `linear-gradient(100deg, ${C.orange}, ${C.pink} 45%, ${C.violet} 75%, ${C.blue})`;
+export const BRAND_FONT = "'Urbanist', 'Plus Jakarta Sans', sans-serif";
+export const GRAD = `linear-gradient(100deg, ${C.navy}, ${C.blue} 35%, ${C.sky} 65%, ${C.orange})`;
+
+/** Each scene can run its animation clock faster than real time (see SCENES in timeline.ts). */
+export const SpeedContext = createContext(1);
+export const useFrame = () => {
+  const f = useCurrentFrame();
+  return f * useContext(SpeedContext);
+};
 
 const clamp = { extrapolateLeft: "clamp", extrapolateRight: "clamp" } as const;
 
@@ -50,13 +63,14 @@ export const Blob: React.FC<{ x?: number; y?: number; size?: number; intensity?:
   intensity = 1,
   spin = 1,
 }) => {
-  const f = useCurrentFrame();
+  const f = useFrame();
   const t = (f / 30) * spin;
   const parts = [
-    { c: C.pink, dx: Math.sin(t * 0.7) * 120, dy: Math.cos(t * 0.5) * 60, s: 1 },
-    { c: C.orange, dx: Math.cos(t * 0.6 + 1) * 160, dy: Math.sin(t * 0.8) * 90 - 60, s: 0.8 },
-    { c: C.blue, dx: Math.sin(t * 0.5 + 2) * 200 + 120, dy: Math.cos(t * 0.6 + 2) * 80 + 40, s: 0.75 },
-    { c: C.violet, dx: Math.cos(t * 0.9 + 3) * 140 - 140, dy: Math.sin(t * 0.4 + 1) * 100 + 60, s: 0.6 },
+    // mostly brand blue with an orange accent; kept apart so they don't blend to brown
+    { c: C.sky, dx: Math.sin(t * 0.7) * 120 - 60, dy: Math.cos(t * 0.5) * 60, s: 1 },
+    { c: "#9CCBEB", dx: Math.cos(t * 0.6 + 1) * 160 - 160, dy: Math.sin(t * 0.8) * 90 - 60, s: 0.8 },
+    { c: C.orange, dx: Math.sin(t * 0.5 + 2) * 120 + 240, dy: Math.cos(t * 0.6 + 2) * 80 + 40, s: 0.6 },
+    { c: C.peach, dx: Math.cos(t * 0.9 + 3) * 140 + 160, dy: Math.sin(t * 0.4 + 1) * 100 - 80, s: 0.55 },
   ];
   return (
     <AbsoluteFill style={{ opacity: intensity, pointerEvents: "none" }}>
@@ -72,7 +86,7 @@ export const Blob: React.FC<{ x?: number; y?: number; size?: number; intensity?:
             borderRadius: "50%",
             background: `radial-gradient(closest-side, ${p.c}, ${p.c}00)`,
             filter: "blur(40px)",
-            mixBlendMode: "multiply",
+            opacity: 0.85,
           }}
         />
       ))}
@@ -91,7 +105,7 @@ export const Words: React.FC<{
   color?: string;
   style?: React.CSSProperties;
 }> = ({ text, at = 0, every = 4, size = 120, weight = 700, gradientWords = [], color = C.ink, style }) => {
-  const f = useCurrentFrame();
+  const f = useFrame();
   const { fps } = useVideoConfig();
   return (
     <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: `0 ${size * 0.26}px`, ...style }}>
@@ -124,7 +138,7 @@ export const Words: React.FC<{
 
 /** Fade-and-lift in for any element. */
 export const useIn = (at: number, damping = 16) => {
-  const f = useCurrentFrame();
+  const f = useFrame();
   const { fps } = useVideoConfig();
   return spring({ frame: f - at, fps, config: { damping, stiffness: 110 } });
 };
@@ -210,7 +224,7 @@ export const GlowCard: React.FC<{ w: number; h: number; glow?: number; style?: R
   style,
   children,
 }) => {
-  const f = useCurrentFrame();
+  const f = useFrame();
   return (
     <div style={{ position: "relative", width: w, height: h, ...style }}>
       <div
@@ -293,7 +307,7 @@ export const Bubble: React.FC<{ from: "patient" | "adele"; at: number; children:
 };
 
 export const Typing: React.FC = () => {
-  const f = useCurrentFrame();
+  const f = useFrame();
   return (
     <div style={{ alignSelf: "flex-start", display: "flex", gap: 8, padding: "20px 24px", borderRadius: 28, background: "#F2F1F6" }}>
       {[0, 1, 2].map((i) => (
@@ -303,22 +317,11 @@ export const Typing: React.FC = () => {
   );
 };
 
-export const Logo: React.FC<{ size?: number; color?: string }> = ({ size = 160, color = C.ink }) => (
-  <div style={{ display: "flex", alignItems: "center", gap: size * 0.14 }}>
-    <svg width={size * 0.78} height={size * 0.78} viewBox="0 0 100 100">
-      <defs>
-        <linearGradient id="lg" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor={C.orange} />
-          <stop offset="0.5" stopColor={C.pink} />
-          <stop offset="1" stopColor={C.blue} />
-        </linearGradient>
-      </defs>
-      <circle cx="50" cy="50" r="46" fill="url(#lg)" />
-      <path d="M30 52 Q50 74 70 52" stroke="#fff" strokeWidth="9" strokeLinecap="round" fill="none" />
-      <circle cx="36" cy="38" r="6" fill="#fff" />
-      <circle cx="64" cy="38" r="6" fill="#fff" />
-    </svg>
-    <span style={{ fontSize: size, fontWeight: 800, letterSpacing: -size * 0.05, color, lineHeight: 1 }}>adele</span>
+/** AdeleCare wordmark. Swap for the supplied logo files once they are in public/brand/. */
+export const Logo: React.FC<{ size?: number; dark?: boolean }> = ({ size = 160, dark = false }) => (
+  <div style={{ fontFamily: BRAND_FONT, fontSize: size, fontWeight: 700, letterSpacing: -size * 0.02, lineHeight: 1, whiteSpace: "nowrap" }}>
+    <span style={{ color: dark ? "#fff" : C.blue }}>Adele</span>
+    <span style={{ color: dark ? C.peach : C.orange }}>Care</span>
   </div>
 );
 

@@ -1,5 +1,5 @@
 import React from "react";
-import { AbsoluteFill, Easing, interpolate, useCurrentFrame } from "remotion";
+import { AbsoluteFill, Easing, interpolate } from "remotion";
 import {
   Blob,
   Bubble,
@@ -14,19 +14,20 @@ import {
   RollList,
   stepper,
   Typing,
+  useFrame,
   useIn,
   Words,
 } from "./ui";
 
-// All frame numbers below are relative to the scene's own start (30fps).
+// All frame numbers below are on the scene's own clock (30fps, scaled by its speed in timeline.ts).
 
 const Center: React.FC<{ children: React.ReactNode; style?: React.CSSProperties }> = ({ children, style }) => (
   <AbsoluteFill style={{ alignItems: "center", justifyContent: "center", ...style }}>{children}</AbsoluteFill>
 );
 
-/* 0-8s  "Your practice was built on care. Not on answering the phone." */
+/* 0-5.5s  "Your practice was built on care. Not on answering the phone." */
 const Intro: React.FC = () => {
-  const f = useCurrentFrame();
+  const f = useFrame();
   const swap = 105;
   const a = interpolate(f, [swap - 8, swap + 4], [1, 0], clamp);
   const grow = interpolate(f, [0, 240], [0.85, 1.15]);
@@ -50,7 +51,7 @@ const Intro: React.FC = () => {
 };
 
 const Ringing: React.FC<{ at: number }> = ({ at }) => {
-  const f = useCurrentFrame();
+  const f = useFrame();
   const shake = Math.sin((f - at) * 1.6) * 6 * (Math.floor((f - at) / 12) % 2 === 0 ? 1 : 0);
   return (
     <Pill style={{ fontSize: 34, transform: `rotate(${shake * 0.4}deg)` }}>
@@ -60,9 +61,9 @@ const Ringing: React.FC<{ at: number }> = ({ at }) => {
   );
 };
 
-/* 8-17s  "But the chair is full, the phone keeps ringing, and recalls slip when the team is stretched." */
+/* 5.5-11.5s  "But the chair is full, the phone keeps ringing, and recalls slip when the team is stretched." */
 const Problem: React.FC = () => {
-  const f = useCurrentFrame();
+  const f = useFrame();
   const items = ["Chair is full", "Phone ringing", "Voicemail full", "Recall overdue", "Enquiry missed", "Team stretched"];
   const act = stepper(f, [0, 52, 84, 112, 140, 178], 9);
   const missed = [
@@ -81,7 +82,7 @@ const Problem: React.FC = () => {
       <div style={{ position: "absolute", right: 210, top: 140 }}>
         <Rise at={10}>
           <GlowCard w={520} h={800}>
-            <div style={{ padding: "54px 34px", display: "flex", flexDirection: "column", gap: 18, background: "linear-gradient(#23233a,#3a2d52)", height: "100%" }}>
+            <div style={{ padding: "54px 34px", display: "flex", flexDirection: "column", gap: 18, background: `linear-gradient(${C.navy}, ${C.blue})`, height: "100%" }}>
               <div style={{ color: "#fff", fontSize: 96, fontWeight: 600, textAlign: "center", letterSpacing: -3 }}>09:15</div>
               <div style={{ color: "#ffffffaa", fontSize: 26, textAlign: "center", marginTop: -10, marginBottom: 20 }}>Tuesday</div>
               {missed.map((m, i) => {
@@ -118,9 +119,9 @@ const Problem: React.FC = () => {
   );
 };
 
-/* 17-25s  "Meet Adele. The AI receptionist for UK dental practices." */
+/* 11.5-17.5s  "Meet Adele. The AI receptionist for UK dental practices." */
 const LogoScene: React.FC = () => {
-  const f = useCurrentFrame();
+  const f = useFrame();
   const burst = interpolate(f, [0, 40, 90], [0.3, 1.4, 0.75], { ...clamp, easing: Easing.out(Easing.cubic) });
   const lp = useIn(28, 13);
   return (
@@ -128,7 +129,7 @@ const LogoScene: React.FC = () => {
       <Blob size={900 * burst} intensity={interpolate(f, [0, 20, 70, 110], [0, 1, 1, 0.35], clamp)} spin={1.6} />
       <Center>
         <div style={{ transform: `scale(${0.7 + 0.3 * lp})`, opacity: lp, filter: `blur(${(1 - lp) * 20}px)` }}>
-          <Logo size={230} />
+          <Logo size={200} />
         </div>
         <div style={{ height: 50 }} />
         <Words text="The AI receptionist for UK dental practices." at={62} every={4} size={58} weight={600} gradientWords={["receptionist"]} />
@@ -137,9 +138,9 @@ const LogoScene: React.FC = () => {
   );
 };
 
-/* 25-35s  "She answers calls, WhatsApp and web chat, in a warm, natural voice." */
+/* 17.5-23.5s  "She answers calls, WhatsApp and web chat, in a warm, natural voice." */
 const Channels: React.FC = () => {
-  const f = useCurrentFrame();
+  const f = useFrame();
   const starts = [0, 70, 100];
   const act = stepper(f, starts, 10);
   const idx = Math.round(act);
@@ -162,11 +163,11 @@ const Channels: React.FC = () => {
 };
 
 const CallUI: React.FC = () => {
-  const f = useCurrentFrame();
+  const f = useFrame();
   const secs = 12 + Math.floor(f / 30);
   return (
     <div style={{ height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 30 }}>
-      <Logo size={70} />
+      <Logo size={64} />
       <div style={{ fontSize: 30, color: C.mute }}>On a call · 00:{String(secs).padStart(2, "0")}</div>
       <div style={{ display: "flex", gap: 8, alignItems: "center", height: 160 }}>
         {Array.from({ length: 26 }).map((_, i) => (
@@ -209,7 +210,7 @@ const WhatsAppUI: React.FC<{ start: number }> = ({ start }) => (
 );
 
 const WebChatUI: React.FC<{ start: number }> = ({ start }) => {
-  const f = useCurrentFrame();
+  const f = useFrame();
   return (
     <ChatFrame title="Chat with Adele" sub="Riverside Dental · replies instantly" head={GRAD}>
       <Bubble from="patient" at={start + 2}>Do you do Invisalign consultations?</Bubble>
@@ -218,9 +219,9 @@ const WebChatUI: React.FC<{ start: number }> = ({ start }) => {
   );
 };
 
-/* 35-45s  "She books straight into your diary, follows your booking rules, and takes the deposit." */
+/* 23.5-29.5s  "She books straight into your diary, follows your booking rules, and takes the deposit." */
 const Booking: React.FC = () => {
-  const f = useCurrentFrame();
+  const f = useFrame();
   const slot = useIn(150, 14);
   const paid = useIn(205, 12);
   const days = ["Mon", "Tue", "Wed", "Thu", "Fri"];
@@ -307,9 +308,9 @@ const Booking: React.FC = () => {
   );
 };
 
-/* 45-54s  "Every channel runs through one assistant, and straight into your PMS." */
+/* 29.5-35.5s  "Every channel runs through one assistant, and straight into your PMS." */
 const Hub: React.FC = () => {
-  const f = useCurrentFrame();
+  const f = useFrame();
   const cx = 860;
   const cy = 560;
   const chans = ["📞 Calls", "💬 WhatsApp", "🌐 Web chat", "✉️ Email", "📱 SMS"];
@@ -328,14 +329,14 @@ const Hub: React.FC = () => {
           width: 420,
           height: 420,
           borderRadius: "50%",
-          background: `radial-gradient(circle at 35% 30%, #fff 0%, ${C.orange} 25%, ${C.pink} 55%, ${C.blue} 100%)`,
-          boxShadow: `0 0 120px ${C.pink}88`,
+          background: `radial-gradient(circle at 35% 30%, #CFE6F6 0%, ${C.sky} 30%, ${C.blue} 65%, ${C.navy} 100%)`,
+          boxShadow: `0 0 120px ${C.sky}aa`,
           transform: `scale(${0.95 + 0.04 * Math.sin(f / 10)}) rotate(${f * 0.6}deg)`,
           filter: "blur(2px)",
         }}
       />
-      <div style={{ position: "absolute", left: cx - 160, top: cy - 50, width: 320, display: "flex", justifyContent: "center" }}>
-        <Logo size={80} color="#fff" />
+      <div style={{ position: "absolute", left: cx - 200, top: cy - 34, width: 400, display: "flex", justifyContent: "center" }}>
+        <Logo size={62} dark />
       </div>
       {chans.map((c, i) => {
         const p = useIn(14 + i * 8, 14);
@@ -369,7 +370,7 @@ const Hub: React.FC = () => {
   );
 };
 
-/* 54-63s  "She asks every patient to confirm. Your team only steps in if there's still no reply." */
+/* 35.5-43.5s  "She asks every patient to confirm. Your team only steps in if there's still no reply." */
 const Confirm: React.FC = () => {
   const rows = [
     { at: 16, n: "Emma R.", d: "Thu 15:40 · Check-up", s: "Confirmed", ok: true },
@@ -426,9 +427,9 @@ const Confirm: React.FC = () => {
   );
 };
 
-/* 63-72s  "And she works your patient list too. Missed enquiries, recalls, and lapsed patients." */
+/* 43.5-49.5s  "And she works your patient list too. Missed enquiries, recalls, and lapsed patients." */
 const ListScene: React.FC = () => {
-  const f = useCurrentFrame();
+  const f = useFrame();
   const items = [
     "Checking today's diary",
     "Calling back missed enquiries",
@@ -451,41 +452,9 @@ const ListScene: React.FC = () => {
   );
 };
 
-/* 72-79s  "Before the doors open, and long after they close." */
-const Clock: React.FC = () => {
-  const f = useCurrentFrame();
-  const mins = interpolate(f, [10, 190], [7 * 60 + 12, 22 * 60 + 47], { ...clamp, easing: Easing.inOut(Easing.quad) });
-  const hh = String(Math.floor(mins / 60)).padStart(2, "0");
-  const mm = String(Math.floor(mins % 60)).padStart(2, "0");
-  const open = mins >= 8 * 60 + 30 && mins < 18 * 60;
-  const bars = 16;
-  return (
-    <AbsoluteFill>
-      <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 520, display: "flex", alignItems: "flex-end", gap: 10, padding: "0 60px" }}>
-        {Array.from({ length: bars }).map((_, i) => {
-          const h = interpolate(f, [8 + i * 9, 30 + i * 9], [0, 1], clamp) * (140 + 300 * Math.abs(Math.sin(i * 1.7 + 0.4)));
-          return <div key={i} style={{ flex: 1, height: h, borderRadius: "18px 18px 0 0", background: GRAD, opacity: 0.85, filter: "blur(1px)" }} />;
-        })}
-      </div>
-      <AbsoluteFill style={{ background: "linear-gradient(#FBFBFD 35%, #FBFBFD00 80%)" }} />
-      <Center style={{ justifyContent: "flex-start", paddingTop: 170 }}>
-        <div style={{ fontSize: 300, fontWeight: 800, letterSpacing: -14, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
-          {hh}:{mm}
-        </div>
-        <div style={{ marginTop: 26 }}>
-          <Pill style={{ fontSize: 34 }}>
-            <Dot size={16} />
-            {open ? "Practice open · Adele answering" : "Practice closed · Adele still answering"}
-          </Pill>
-        </div>
-      </Center>
-    </AbsoluteFill>
-  );
-};
-
-/* 79-90s  "See Adele on a real practice day. Apply for a pilot place at adelecare.co.uk." */
+/* 49.5-60s  "See Adele on a real practice day. Apply for a pilot place at adelecare.co.uk." */
 const Cta: React.FC = () => {
-  const f = useCurrentFrame();
+  const f = useFrame();
   const typed = "adelecare.co.uk";
   const n = Math.floor(interpolate(f, [120, 170], [0, typed.length], clamp));
   const pill = useIn(105, 14);
@@ -516,13 +485,13 @@ const Cta: React.FC = () => {
             {typed.slice(0, n)}
             <span style={{ opacity: f % 30 < 15 && n < typed.length ? 1 : 0 }}>|</span>
           </span>
-          <div style={{ padding: "18px 30px", borderRadius: 999, background: C.ink, color: "#fff", fontSize: 30, fontWeight: 700, transform: `scale(${press})` }}>
+          <div style={{ padding: "18px 30px", borderRadius: 999, background: C.ink, color: "#fff", fontSize: 30, fontWeight: 700, whiteSpace: "nowrap", transform: `scale(${press})` }}>
             Apply for a pilot →
           </div>
         </div>
       </Center>
       <Center style={{ opacity: outro, transform: `scale(${0.9 + 0.1 * outro})` }}>
-        <Logo size={200} />
+        <Logo size={180} />
         <div style={{ marginTop: 34, fontSize: 40, fontWeight: 600, color: C.mute }}>adelecare.co.uk</div>
       </Center>
     </AbsoluteFill>
@@ -538,6 +507,5 @@ export const Scenes: Record<string, React.FC> = {
   hub: Hub,
   confirm: Confirm,
   list: ListScene,
-  clock: Clock,
   cta: Cta,
 };
