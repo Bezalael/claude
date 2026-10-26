@@ -19,10 +19,12 @@ Every assembly is verified: the frame count must equal the composition length, a
 side of each join are compared (PSNR, by exact frame index, BT.709) against a fresh still. A join passes
 when the frame clears a codec-tolerance floor and no neighbouring frame matches the still clearly better;
 a neighbour only counts when it differs from the frame itself by more than codec noise, since at the
-still end of a transition adjacent frames are near-identical and cannot reveal a shift. Segments older than the latest change under src/ or public/ are reported as
+still end of a transition adjacent frames are near-identical and cannot reveal a shift. The audio must run
+without a break: every packet one frame after the last. Segments older than the latest change under src/ or public/ are reported as
 possibly stale.
 """
 import argparse
+from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 import json
 import os
@@ -81,6 +83,16 @@ def frame_count(path):
         check=True, capture_output=True, text=True,
     ).stdout.strip()
     return int(out)
+
+
+def audio_gaps(path):
+    """Times (s) where the audio timeline jumps: each packet should start exactly one frame after the last."""
+    out = subprocess.run(["ffprobe", "-v", "error", "-select_streams", "a:0", "-show_entries", "packet=pts,pts_time", "-of", "csv=p=0", path],
+                         check=True, capture_output=True, text=True).stdout.split()
+    packets = [(int(pts), float(t)) for pts, t, *_ in (line.split(",") for line in out)]
+    steps = [b[0] - a[0] for a, b in zip(packets, packets[1:])]
+    frame = Counter(steps).most_common(1)[0][0]
+    return [round(a[1], 3) for a, step in zip(packets, steps) if step != frame]
 
 
 def extract_frames(video, frames, out_dir):
@@ -154,8 +166,10 @@ def main():
     meas = subprocess.run(["ffmpeg", "-hide_banner", "-i", audio, "-af", f"loudnorm={target}:print_format=json", "-f", "null", "-"],
                           cwd=ROOT, capture_output=True, text=True).stderr
     m = json.loads(meas[meas.rindex("{"): meas.rindex("}") + 1])
+    # When linear gain would clip, loudnorm runs in dynamic mode and stamps its final 3 s flush about 0.1 s
+    # late; asetpts restamps every sample by count so the audio stays continuous and in sync.
     norm = (f"loudnorm={target}:measured_I={m['input_i']}:measured_TP={m['input_tp']}:measured_LRA={m['input_lra']}"
-            f":measured_thresh={m['input_thresh']}:offset={m['target_offset']}:linear=true,aresample=48000")
+            f":measured_thresh={m['input_thresh']}:offset={m['target_offset']}:linear=true,aresample=48000,asetpts=N/SR/TB")
 
     final = os.path.join(base, "adele-care.mp4")
     inputs = [os.path.join(ROOT, seg_path(i, sid)) for i, sid, _, _ in t["segments"]] + [audio_abs]
@@ -178,6 +192,8 @@ def main():
                                        "-of", "json", os.path.join(ROOT, final)], check=True, capture_output=True, text=True).stdout)["streams"][0]
     if probe.get("profile") != "High" or probe.get("level", 99) > 41 or probe.get("pix_fmt") != "yuv420p":
         problems.append(f"not broadly playable: {probe} (want High profile, level 4.1 or lower, yuv420p)")
+    if gaps := audio_gaps(os.path.join(ROOT, final)):
+        problems.append(f"audio timeline jumps at {gaps} s")
     checks = sorted({f for _, _, first, last in t["segments"] for f in (first, last)})
     tmp = os.path.join(ROOT, seg_dir, "verify")
     os.makedirs(tmp, exist_ok=True)
@@ -232,6 +248,8 @@ def share(seg_dir, final):
     print(f"{out}: {size / 1e6:.1f} MB, {frames} frames")
     if size > 15e6:
         sys.exit("sharing copy is over 15 MB")
+    if gaps := audio_gaps(os.path.join(ROOT, out)):
+        sys.exit(f"sharing copy's audio timeline jumps at {gaps} s")
 
 
 if __name__ == "__main__":
