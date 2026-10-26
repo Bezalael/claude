@@ -7,8 +7,13 @@ A Remotion project (4.0.539). The look follows a modern product film (white canv
 ```
 npm i
 npm run dev        # Remotion Studio preview
-npm run render     # out/adele-care.mp4 (1920x1080, 30fps, H.264, yuv420p)
+python tools/render.py    # cached, verified build: out/adele-care.mp4 (master) and out/adele-care-share.mp4 (under 15 MB)
 ```
+
+## Files
+
+- `adele-care-90s.mp4`: the film to share (14.6 MB, 1080p H.264 High 4.0). Use this one for apps, phones and messages.
+- `adele-care-90s-master.mp4`: the high-quality master (27 MB) for websites and editing.
 
 ## Structure
 

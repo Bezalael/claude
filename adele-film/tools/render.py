@@ -210,6 +210,28 @@ def main():
     if problems:
         sys.exit("VERIFY FAILED:\n  " + "\n  ".join(problems))
     print("verified: exact length, all joins match direct renders")
+    if not a.draft:
+        share(seg_dir, final)
+
+
+def share(seg_dir, final):
+    """A sharing copy under 15 MB: many app and phone previewers refuse videos over about 25 MB. Two-pass
+    encode from the mezzanine segments at the same profile and level, audio from the mastered film, and
+    the 90 kHz video clock Remotion's own exports use."""
+    out = os.path.join("out", "adele-care-share.mp4")
+    log = os.path.join(seg_dir, "x264pass")
+    common = ["-c:v", "libx264", "-preset", "slow", "-b:v", "1150k", "-maxrate", "2300k", "-bufsize", "4600k",
+              "-profile:v", "high", "-level:v", "4.0", "-pix_fmt", "yuv420p", "-passlogfile", log,
+              "-colorspace", "bt709", "-color_primaries", "bt709", "-color_trc", "bt709", "-color_range", "tv"]
+    concat = ["-f", "concat", "-safe", "0", "-i", os.path.join(seg_dir, "list.txt")]
+    run(["ffmpeg", "-v", "error", "-y", *concat, "-an", *common, "-pass", "1", "-f", "null", os.devnull])
+    run(["ffmpeg", "-v", "error", "-y", *concat, "-i", final, "-map", "0:v", "-map", "1:a", *common, "-pass", "2",
+         "-c:a", "aac", "-b:a", "128k", "-ar", "48000", "-video_track_timescale", "90000", "-movflags", "+faststart", out])
+    size = os.path.getsize(os.path.join(ROOT, out))
+    frames = frame_count(os.path.join(ROOT, out))
+    print(f"{out}: {size / 1e6:.1f} MB, {frames} frames")
+    if size > 15e6:
+        sys.exit("sharing copy is over 15 MB")
 
 
 if __name__ == "__main__":
