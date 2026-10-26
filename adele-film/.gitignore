@@ -4,3 +4,4 @@ public/music.wav
 # Local secrets written by `elevenlabs onboard`
 /.env.local
 .env*
+__pycache__/
