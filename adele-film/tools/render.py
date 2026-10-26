@@ -22,6 +22,7 @@ a codec-tolerance floor. Segments older than the latest change under src/ or pub
 possibly stale.
 """
 import argparse
+from concurrent.futures import ThreadPoolExecutor
 import json
 import os
 import re
@@ -169,9 +170,11 @@ def main():
     tmp = os.path.join(ROOT, seg_dir, "verify")
     os.makedirs(tmp, exist_ok=True)
     decoded = extract_frames(os.path.join(ROOT, final), [g for f in checks for g in (f - 1, f, f + 1) if 0 <= g < n], tmp)
+    refs = {f: os.path.join(tmp, f"still-{f}.png") for f in checks}
+    with ThreadPoolExecutor(max_workers=4) as pool:  # each still pays a browser start-up, so run them side by side
+        list(pool.map(lambda f: remotion("still", bundle, COMP, refs[f], f"--frame={f}", *scale), checks))
     for f in checks:
-        ref = os.path.join(tmp, f"still-{f}.png")
-        remotion("still", bundle, COMP, ref, f"--frame={f}", *scale)
+        ref = refs[f]
         here = psnr(decoded[f], ref)
         around = [x for x in (psnr(decoded[g], ref) for g in (f - 1, f + 1) if g in decoded) if x is not None]
         best_nearby = max(around, default=0.0)
