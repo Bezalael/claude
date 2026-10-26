@@ -59,16 +59,16 @@ export const zoomThrough =
   ({ dir, p, children }) => {
     const origin = `${x}px ${y}px`;
     if (dir === "out") {
-      const e = inExpo(p);
+      const e = p ** 3;
       return (
-        <AbsoluteFill style={{ transform: `scale(${1 + 5 * e})`, transformOrigin: origin, opacity: 1 - smooth(0.45, 0.75, p), filter: `blur(${12 * e}px)` }}>
+        <AbsoluteFill style={{ transform: `scale(${1 + 6 * e})`, transformOrigin: origin, opacity: 1 - smooth(0.3, 0.56, p), filter: `blur(${16 * p * p}px)` }}>
           {children}
         </AbsoluteFill>
       );
     }
     const e = outExpo(smooth(0.35, 1, p));
     return (
-      <AbsoluteFill style={{ transform: `scale(${lerp(0.55, 1, e)})`, transformOrigin: origin, opacity: smooth(0.4, 0.65, p), filter: `blur(${(1 - e) * 14}px)` }}>
+      <AbsoluteFill style={{ transform: `scale(${lerp(0.6, 1, e)})`, transformOrigin: origin, opacity: smooth(0.35, 0.6, p), filter: `blur(${(1 - e) * 14}px)` }}>
         {children}
       </AbsoluteFill>
     );
@@ -214,9 +214,9 @@ export const cardLift: React.FC<PresProps> = ({ dir, p, id, children }) => {
   );
 };
 
-/** Circular reveal growing out of a point in the old scene. */
+/** Circular reveal opening from a point in the old scene. */
 export const irisFrom =
-  (x: number, y: number, r0: number): React.FC<PresProps> =>
+  (x: number, y: number): React.FC<PresProps> =>
   ({ dir, p, children }) => {
     const e = inOutCubic(p);
     if (dir === "out") {
@@ -226,7 +226,7 @@ export const irisFrom =
         </AbsoluteFill>
       );
     }
-    const r = lerp(r0, 2300, e);
+    const r = lerp(0, 2300, e);
     const m = `radial-gradient(circle at ${x}px ${y}px, #000 ${Math.max(0, r - 2)}px, transparent ${r}px)`;
     return (
       <>

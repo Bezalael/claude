@@ -1,6 +1,6 @@
-"""Synthesise the sound effects: a UK phone ring and a soft "booked" chime.
+"""Synthesise the sound effects: a UK phone ring, a soft "booked" chime and a message pop.
 
-usage: python tools/sfx.py  -> public/sfx/ring.wav, public/sfx/chime.wav
+usage: python tools/sfx.py  -> public/sfx/ring.wav, public/sfx/chime.wav, public/sfx/pop.wav
 """
 import numpy as np
 import soundfile as sf
@@ -32,4 +32,9 @@ for start, f in [(0.0, 1318.5), (0.12, 1760.0)]:
     chime[i : i + len(t)] += s * np.minimum(1, t / 0.003)
 chime *= 0.45 / np.max(np.abs(chime))
 sf.write("public/sfx/chime.wav", chime.astype(np.float32), SR)
+# Short rising "bloop" for a chat message arriving.
+t = tvec(0.16)
+pop = np.sin(2 * np.pi * np.cumsum(520 + 900 * (t / 0.16)) / SR) * np.exp(-t * 28) * np.minimum(1, t / 0.002)
+pop *= 0.5 / np.max(np.abs(pop))
+sf.write("public/sfx/pop.wav", pop.astype(np.float32), SR)
 print("sfx written")

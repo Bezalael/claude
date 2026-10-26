@@ -1,24 +1,25 @@
-"""Compose the 67s music bed from scratch (original, no licence needed).
+"""Compose the 90s music bed from scratch (original, no licence needed).
 
 usage: python tools/music.py  -> public/music.wav
 then: ffmpeg -i public/music.wav -b:a 192k public/music.mp3
 
 Upbeat 120 BPM pop-house: four-on-the-floor kick, claps, offbeat hats,
 syncopated chord stabs and a bouncing bass, all pumping against the kick.
-Bars start at 1.5s; every scene cut (5.5, 11.5, 18.5, 35.5, 42.5, 50.5, 57.5s) lands on a beat.
-Shape: build (0-5.5s), kick in (5.5s), full drop on the logo (11.5s), a soft bed under the phone
-call (18.5-35.5s), back in (35.5s), short breakdown into the call to action (57.5-59.5s),
-back in (59.5s), ring out (64.5-67s).
+Bars start at 0.5s, so the big moments (logo 12.5s, WhatsApp 38.5s, call to action 80.5s)
+land on downbeats and every other cut lands on a beat.
+Shape: build (0-5.5s), kick in (5.5s), full drop on the logo (12.5s), a soft bed under the
+phone call (19.5-38.5s), full again (38.5s), breakdown under the clock (74-80.5s), final drop
+into the call to action (80.5s), ring out (87.5-90s).
 """
 import numpy as np
 import soundfile as sf
 
 SR = 44100
-DUR = 67.0
+DUR = 90.0
 BPM = 120
 BEAT = 60 / BPM
 BAR = 4 * BEAT
-OFFSET = 1.5  # first downbeat
+OFFSET = 0.5  # first downbeat
 N = int(SR * DUR)
 rng = np.random.default_rng(11)
 
@@ -138,20 +139,20 @@ HOOK = [(0, 81), (0.5, 83), (1, 85), (2, 81), (2.5, 78), (3, 76)]  # bell motif
 def section(t):
     if t < 5.5:
         return "build"
-    if t < 11.5:
+    if t < 12.5:
         return "groove"
-    if 18.5 <= t < 35.5:
+    if 19.5 <= t < 38.5:
         return "call"
-    if 57.5 <= t < 59.5:
+    if 74.0 <= t < 80.5:
         return "break"
-    if t >= 64.5:
+    if t >= 87.5:
         return "end"
     return "full"
 
 
-ROLL_INTO = [5.5, 18.5, 42.5, 50.5]
-CRASHES = [11.5, 35.5, 59.5]
-RISERS = [9.5, 33.5, 57.5]  # 2s each, ending on a crash or the breakdown
+ROLL_INTO = [5.5, 19.5, 52.5, 59.5, 67.0]
+CRASHES = [12.5, 38.5, 80.5]
+RISERS = [10.5, 36.5, 78.5]  # 2s each, ending on a crash
 
 
 kicks = []
@@ -161,7 +162,7 @@ add(music, pad([57, 61, 64, 69], OFFSET + 0.2), 0, gain=0.25)
 BRIGHT = {"build": 0.0, "groove": 0.7, "full": 1.0, "call": 0.25, "break": 0.3}
 while t < DUR:
     notes, root = prog[bar_i % 4]
-    # sections can change mid-bar (18.5s, 64.5s), so each event checks its own time
+    # sections can change mid-bar (19.5s, 74s), so each event checks its own time
     if section(t) in ("build", "break", "call") or section(t + 2 * BEAT) == "call":
         add(music, pad([n - 12 for n in notes], BAR + 0.3), t, gain=0.32)
     if section(t) == "end" or section(t + 2 * BEAT) == "end":
@@ -216,7 +217,7 @@ for c in CRASHES:
     add(drums, crash(), c, gain=0.35)
 for r in RISERS:
     add(drums, riser(2.0), r, gain=0.38)
-add(drums, kick(), 64.5, gain=0.9)
+add(drums, kick(), 87.5, gain=0.9)
 
 # sidechain pump: duck the harmonic parts after every kick
 t_axis = np.arange(N) / SR

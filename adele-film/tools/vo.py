@@ -23,9 +23,11 @@ lines = [
     ("call_b", PATIENT, "Hi, I've cracked a tooth. Could I come in today?", True),
     ("call_c", ADELE, "Oh no, I'm sorry. I can see you at two forty today. Shall I book that?", False),
     ("call_d", PATIENT, "Yes please, perfect.", True),
+    ("whatsapp", ADELE, "When a patient cancels, I offer the slot on WhatsApp to someone waiting for an earlier visit, and move them in.", False),
     ("hub", ADELE, "I answer calls, WhatsApp and web chat, and book straight into your P M S.", False),
     ("confirm", ADELE, "I ask every patient to confirm. Your team only steps in if there's no reply.", False),
     ("list", ADELE, "And I work your patient list too. Missed enquiries, recalls, and lapsed patients.", False),
+    ("clock", ADELE, "Before the doors open, and long after they close, I'm still answering.", False),
     ("cta", ADELE, "See me on a real practice day. Apply for a pilot place at adelecare dot co dot uk.", False),
 ]
 

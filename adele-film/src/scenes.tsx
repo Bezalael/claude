@@ -49,18 +49,18 @@ const Ringing: React.FC<{ at: number }> = ({ at }) => {
   );
 };
 
-/* 5.5-11.5s  "But the chair is full, the phone keeps ringing, and recalls slip when the team is stretched." */
+/* 5.5-12.5s  "But the chair is full, the phone keeps ringing, and recalls slip when the team is stretched." */
 const Problem: React.FC = () => {
   const f = useCurrentFrame();
   const cue = useCue();
   const items = ["Chair is full", "Phone ringing", "Voicemail full", "Recall overdue", "Enquiry missed", "Team stretched"];
-  const act = stepper(f, [0, cue(7.0), cue(7.7), cue(8.4), cue(9.0), cue(9.6)], 9);
+  const act = stepper(f, [0, cue(7.5), cue(8.3), cue(9.0), cue(9.8), cue(10.6)], 9);
   const missed = [
-    { at: cue(6.3), t: "Missed call", s: "07700 900 412 · 09:12", icon: "✆", red: true },
-    { at: cue(6.9), t: "Missed call", s: "07700 900 877 · 09:14", icon: "✆", red: true },
-    { at: cue(7.6), t: "Voicemail (3)", s: "Mailbox nearly full", icon: "◉", red: false },
-    { at: cue(8.3), t: "Recall overdue", s: "38 patients this month", icon: "!", red: false },
-    { at: cue(9.0), t: "New enquiry", s: "Website form · no reply yet", icon: "!", red: false },
+    { at: cue(6.4), t: "Missed call", s: "07700 900 412 · 09:12", icon: "✆", red: true },
+    { at: cue(7.2), t: "Missed call", s: "07700 900 877 · 09:14", icon: "✆", red: true },
+    { at: cue(8.2), t: "Voicemail (3)", s: "Mailbox nearly full", icon: "◉", red: false },
+    { at: cue(9.0), t: "Recall overdue", s: "38 patients this month", icon: "!", red: false },
+    { at: cue(9.9), t: "New enquiry", s: "Website form · no reply yet", icon: "!", red: false },
   ];
   return (
     <AbsoluteFill>
@@ -109,20 +109,20 @@ const Notification: React.FC<{ at: number; t: string; s: string; icon: string; r
   );
 };
 
-/* 11.5-18.5s  "Hi, I'm Adele. The AI receptionist for UK dental practices."
+/* 12.5-19.5s  "Hi, I'm Adele. The AI receptionist for UK dental practices."
    Arrives as the app icon (from shrinkToIcon), opens into the symbol, builds the lockup,
    then hands the symbol back to the centre for the fly-through. */
 const LogoScene: React.FC = () => {
   const f = useCurrentFrame();
   const { fps } = useVideoConfig();
   const cue = useCue();
-  const punch = spring({ frame: f - cue(11.5), fps, config: { damping: 9, stiffness: 180 } });
+  const punch = spring({ frame: f - cue(12.5), fps, config: { damping: 9, stiffness: 180 } });
   const iconScale = 1 + 0.07 * Math.sin(Math.min(1, punch) * Math.PI);
-  const open = interpolate(f, [cue(11.75), cue(12.65)], [0, 1], { ...clamp, easing: Easing.inOut(Easing.cubic) });
-  const lock = interpolate(f, [cue(12.9), cue(13.7)], [0, 1], { ...clamp, easing: Easing.inOut(Easing.cubic) });
-  const word = interpolate(f, [cue(13.05), cue(14.0)], [0, 1], { ...clamp, easing: Easing.out(Easing.cubic) });
-  const sheen = interpolate(f, [cue(14.1), cue(15.0)], [0, 1], clamp);
-  const outro = interpolate(f, [cue(17.0), cue(17.95)], [0, 1], { ...clamp, easing: Easing.inOut(Easing.cubic) });
+  const open = interpolate(f, [cue(12.75), cue(13.65)], [0, 1], { ...clamp, easing: Easing.inOut(Easing.cubic) });
+  const lock = interpolate(f, [cue(13.9), cue(14.7)], [0, 1], { ...clamp, easing: Easing.inOut(Easing.cubic) });
+  const word = interpolate(f, [cue(14.05), cue(15.0)], [0, 1], { ...clamp, easing: Easing.out(Easing.cubic) });
+  const sheen = interpolate(f, [cue(15.1), cue(16.0)], [0, 1], clamp);
+  const outro = interpolate(f, [cue(18.0), cue(18.95)], [0, 1], { ...clamp, easing: Easing.inOut(Easing.cubic) });
 
   // symbol: inside the icon -> centre (LOGO_END) -> lockup position -> back to centre for the fly-through
   const L = { cx: 458, cy: 470, width: 320 };
@@ -153,13 +153,13 @@ const LogoScene: React.FC = () => {
         </div>
       </div>
       <div style={{ position: "absolute", top: 640, width: "100%", opacity: 1 - outro, filter: `blur(${outro * 10}px)` }}>
-        <Words text="The AI receptionist for UK dental practices." at={cue(13.5)} every={4} size={58} weight={600} gradientWords={["receptionist"]} />
+        <Words text="The AI receptionist for UK dental practices." at={cue(14.7)} every={4} size={58} weight={600} gradientWords={["receptionist"]} />
       </div>
     </AbsoluteFill>
   );
 };
 
-/* 18.5-35.5s  The hero moment: a patient rings, Adele answers, finds a slot and books it. */
+/* 19.5-38.5s  The hero moment: a patient rings, Adele answers, finds a slot and books it. */
 const CALL = VO.filter((v) => v.file.startsWith("call_"));
 const TRANSCRIPT: Record<string, { who: "adele" | "patient"; text: string }> = {
   call_a: { who: "adele", text: "Good morning, Riverside Dental. This is Adele, how can I help?" },
@@ -167,10 +167,10 @@ const TRANSCRIPT: Record<string, { who: "adele" | "patient"; text: string }> = {
   call_c: { who: "adele", text: "Oh no, I'm sorry. I can see you at 2:40 today. Shall I book that?" },
   call_d: { who: "patient", text: "Yes please, perfect." },
 };
-const ANSWER_AT = 20.2;
-const CHECKING_AT = 28.9;
-const FOUND_AT = 29.9;
-const BOOKED_AT = 33.75;
+const ANSWER_AT = 21.2;
+const CHECKING_AT = 29.3;
+const FOUND_AT = 30.6;
+const BOOKED_AT = 37.55;
 
 const Call: React.FC = () => {
   const f = useCurrentFrame();
@@ -192,14 +192,14 @@ const Call: React.FC = () => {
           </GlowCard>
         </Rise>
       </div>
-      <Rise at={cue(19.4)} style={{ position: "absolute", left: 300, top: 990, width: 470, display: "flex", justifyContent: "center" }}>
+      <Rise at={cue(20.4)} style={{ position: "absolute", left: 300, top: 990, width: 470, display: "flex", justifyContent: "center" }}>
         <Pill style={{ fontSize: 26, padding: "10px 22px" }}>
           <Dot size={12} /> {answered ? "Adele answered on the 2nd ring" : "A patient is calling"}
         </Pill>
       </Rise>
 
       <div style={{ position: "absolute", left: 900, top: 110, width: 820, display: "flex", flexDirection: "column", gap: 18 }}>
-        <Rise at={cue(20.0)}>
+        <Rise at={cue(21.0)}>
           <div style={{ display: "flex", alignItems: "center", gap: 14, fontSize: 24, fontWeight: 700, color: C.mute, letterSpacing: 2, textTransform: "uppercase" }}>
             <div style={{ width: 14, height: 14, borderRadius: 7, background: "#FF4D4D", opacity: 0.5 + 0.5 * Math.abs(Math.sin(f / 10)) }} />
             Live call transcript
@@ -324,14 +324,266 @@ const OnCall: React.FC<{ speaking?: string; since: number; booked: number }> = (
   );
 };
 
-/* 35.5-42.5s  "I answer calls, WhatsApp and web chat, and book straight into your PMS." */
+/* 38.5-52.5s  "When a patient cancels, I offer the slot on WhatsApp to someone waiting for an earlier visit, and move them in." */
+const WA = { header: "#075E54", accent: "#128C7E", wall: "#EFE7DD", out: "#DCF8C6", tick: "#34B7F1" };
+const CANCEL_AT = 38.9;
+const OFFER_AT = 40.6;
+const TYPING_AT = 42.4;
+const REPLY_AT = 43.6;
+const DONE_AT = 44.8;
+const FILLED_AT = 45.5;
+
+const WhatsApp: React.FC = () => {
+  const f = useCurrentFrame();
+  const cue = useCue();
+  const cancel = useIn(cue(CANCEL_AT), 14);
+  const filled = useIn(cue(FILLED_AT), 12);
+  const toastOut = interpolate(f, [cue(41.6), cue(42.2)], [0, 1], clamp);
+  const rows = [
+    { t: "09:00", n: "Aisha K. · Filling" },
+    { t: "09:40", n: "Tom W. · Check-up" },
+    { t: "10:20", n: "James T. · Hygiene", gap: true },
+    { t: "11:00", n: "Priya S. · Crown fit" },
+    { t: "11:40", n: "Ben O. · Check-up" },
+    { t: "12:20", n: "Lunch", muted: true },
+  ];
+  return (
+    <AbsoluteFill>
+      <Blob x={1400} y={520} size={720} intensity={0.45} />
+      <div style={{ position: "absolute", left: 150, top: 118, opacity: cancel * (1 - toastOut), transform: `translateY(${(1 - cancel) * -30 - toastOut * 16}px)` }}>
+        <Pill style={{ fontSize: 28, padding: "14px 26px" }}>
+          <span style={{ color: "#E5484D", fontSize: 22 }}>●</span> James T. cancelled tomorrow's 10:20
+        </Pill>
+      </div>
+      <div style={{ position: "absolute", left: 150, top: 210 }}>
+        <Rise at={4}>
+          <GlowCard w={760} h={720} glow={0.5}>
+            <div style={{ padding: 36 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 24 }}>
+                <div style={{ fontSize: 36, fontWeight: 800 }}>Tomorrow · Dr Shah</div>
+                <div style={{ fontSize: 22, color: C.mute }}>Thursday</div>
+              </div>
+              {rows.map((r) => (
+                <DiaryRow key={r.t} {...r} cancel={r.gap ? cancel : 0} filled={r.gap ? filled : 0} />
+              ))}
+            </div>
+          </GlowCard>
+        </Rise>
+      </div>
+      <div style={{ position: "absolute", left: 150, top: 960, display: "flex", gap: 14 }}>
+        {["✓ Gap filled", "✓ Waitlist updated", "✓ Saved to your PMS"].map((c, i) => (
+          <Rise key={c} at={cue(46.3) + i * 6} dist={20}>
+            <Pill style={{ fontSize: 24, padding: "10px 20px" }}>{c}</Pill>
+          </Rise>
+        ))}
+      </div>
+      <div style={{ position: "absolute", left: 1180, top: 80 }}>
+        <Rise at={8}>
+          <GlowCard w={470} h={900} glow={0.7}>
+            <WhatsAppChat />
+          </GlowCard>
+        </Rise>
+      </div>
+    </AbsoluteFill>
+  );
+};
+
+const DiaryRow: React.FC<{ t: string; n: string; gap?: boolean; muted?: boolean; cancel: number; filled: number }> = ({ t, n, muted, cancel, filled }) => (
+  <div style={{ display: "flex", alignItems: "center", gap: 20, height: 84, marginBottom: 12 }}>
+    <div style={{ width: 80, fontSize: 24, color: C.mute, fontVariantNumeric: "tabular-nums" }}>{t}</div>
+    <div style={{ flex: 1, height: "100%", borderRadius: 18, position: "relative", overflow: "hidden", background: muted ? "#F7F8FA" : "#EEF2F7" }}>
+      <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", padding: "0 24px", fontSize: 26, fontWeight: 600, color: muted ? C.mute : C.ink, opacity: 1 - cancel }}>{n}</div>
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          borderRadius: 18,
+          border: "3px dashed #E5484D",
+          background: "#FFF3F3",
+          display: "flex",
+          alignItems: "center",
+          padding: "0 24px",
+          fontSize: 26,
+          fontWeight: 700,
+          color: "#C9353A",
+          opacity: cancel * (1 - filled),
+        }}
+      >
+        Gap · now free
+      </div>
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          borderRadius: 18,
+          background: GRAD,
+          color: "#fff",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "0 24px",
+          opacity: filled,
+          transform: `scale(${0.9 + 0.1 * filled})`,
+          boxShadow: `0 0 ${30 * filled}px ${C.sky}`,
+        }}
+      >
+        <span style={{ fontSize: 26, fontWeight: 800 }}>Sarah M. · Check-up</span>
+        <span style={{ fontSize: 20, opacity: 0.9 }}>moved up from 12 June</span>
+      </div>
+    </div>
+  </div>
+);
+
+/** A WhatsApp Business conversation on the practice's number, run by Adele. */
+const WhatsAppChat: React.FC = () => {
+  const f = useCurrentFrame();
+  const cue = useCue();
+  const typing = f >= cue(TYPING_AT) && f < cue(REPLY_AT);
+  const read = f >= cue(REPLY_AT);
+  return (
+    <div style={{ height: "100%", display: "flex", flexDirection: "column", background: WA.wall }}>
+      <div style={{ background: WA.header, color: "#fff", padding: "46px 24px 20px", display: "flex", alignItems: "center", gap: 16 }}>
+        <div style={{ fontSize: 34, opacity: 0.9 }}>‹</div>
+        <div style={{ width: 58, height: 58, borderRadius: 29, background: "#fff", display: "grid", placeItems: "center" }}>
+          <SymbolMark width={40} />
+        </div>
+        <div>
+          <div style={{ fontSize: 26, fontWeight: 700 }}>Riverside Dental</div>
+          <div style={{ fontSize: 18, opacity: 0.8 }}>Business account · replies by Adele</div>
+        </div>
+      </div>
+      <div style={{ flex: 1, padding: "22px 18px", display: "flex", flexDirection: "column", gap: 14 }}>
+        <div style={{ alignSelf: "center", background: "#E1F2FB", color: "#54656F", fontSize: 18, padding: "6px 14px", borderRadius: 10 }}>Today</div>
+        <WaBubble out at={cue(OFFER_AT)} time="09:03" read={read}>
+          Hi Sarah 👋 A 10:20 slot just opened tomorrow with Dr Shah. You asked for an earlier check-up. Would you like it?
+        </WaBubble>
+        {typing && (
+          <div style={{ alignSelf: "flex-start", background: "#fff", borderRadius: 18, padding: "16px 20px", display: "flex", gap: 7 }}>
+            {[0, 1, 2].map((i) => (
+              <div key={i} style={{ width: 10, height: 10, borderRadius: 5, background: "#8696A0", opacity: 0.4 + 0.6 * Math.abs(Math.sin(f / 6 + i)) }} />
+            ))}
+          </div>
+        )}
+        <WaBubble at={cue(REPLY_AT)} time="09:05">
+          Yes please! That's perfect 🙌
+        </WaBubble>
+        <WaBubble out at={cue(DONE_AT)} time="09:05" read={false}>
+          Done ✓ I've moved you from 12 June to tomorrow at 10:20. See you then!
+        </WaBubble>
+      </div>
+      <div style={{ background: "#F0F2F5", padding: "14px 18px 30px", display: "flex", gap: 12, alignItems: "center" }}>
+        <div style={{ flex: 1, background: "#fff", borderRadius: 28, height: 54, padding: "0 22px", display: "flex", alignItems: "center", color: "#8696A0", fontSize: 22 }}>Message</div>
+        <div style={{ width: 54, height: 54, borderRadius: 27, background: WA.accent }} />
+      </div>
+    </div>
+  );
+};
+
+const WaBubble: React.FC<{ out?: boolean; at: number; time: string; read?: boolean; children: React.ReactNode }> = ({ out, at, time, read, children }) => {
+  const p = useIn(at, 14);
+  if (p <= 0.001) return null;
+  return (
+    <div
+      style={{
+        alignSelf: out ? "flex-end" : "flex-start",
+        maxWidth: "84%",
+        background: out ? WA.out : "#fff",
+        borderRadius: 16,
+        borderTopRightRadius: out ? 4 : 16,
+        borderTopLeftRadius: out ? 16 : 4,
+        padding: "12px 16px 8px",
+        fontSize: 24,
+        lineHeight: 1.35,
+        color: "#111B21",
+        boxShadow: "0 1px 1px rgba(0,0,0,0.08)",
+        opacity: p,
+        transform: `translateY(${(1 - p) * 24}px) scale(${0.92 + 0.08 * p})`,
+        transformOrigin: out ? "right bottom" : "left bottom",
+      }}
+    >
+      {children}
+      <div style={{ textAlign: "right", fontSize: 16, color: "#667781", marginTop: 4 }}>
+        {time} {out && <span style={{ color: read ? WA.tick : "#8696A0" }}>✓✓</span>}
+      </div>
+    </div>
+  );
+};
+
+/* 74-80.5s  "Before the doors open, and long after they close, I'm still answering." */
+const CALLS_AT = [7.3, 7.7, 8.1, 9.2, 10.4, 11.1, 12.6, 13.3, 14.5, 15.2, 16.8, 17.6, 18.4, 19.2, 20.1, 21.3, 22.2]; // hour of day
+const OPEN = 8.5;
+const CLOSE = 18;
+
+const Clock: React.FC = () => {
+  const f = useCurrentFrame();
+  const cue = useCue();
+  const h = interpolate(f, [cue(74.4), cue(79.6)], [7.2, 22.8], { ...clamp, easing: Easing.inOut(Easing.sin) });
+  const hh = String(Math.floor(h)).padStart(2, "0");
+  const mm = String(Math.floor((h % 1) * 60)).padStart(2, "0");
+  const open = h >= OPEN && h < CLOSE;
+  const T = { x: 310, w: 1300, y: 690 };
+  const px = (hour: number) => T.x + (hour / 24) * T.w;
+  const track = useIn(6, 16);
+  return (
+    <AbsoluteFill>
+      <Blob x={960} y={380} size={900} intensity={0.35} />
+      <Center style={{ justifyContent: "flex-start", paddingTop: 150 }}>
+        <div style={{ fontSize: 300, fontWeight: 800, letterSpacing: -14, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
+          {hh}:{mm}
+        </div>
+      </Center>
+      <div style={{ opacity: track }}>
+        <div style={{ position: "absolute", left: T.x, top: T.y, width: T.w, height: 10, borderRadius: 5, background: "#E3E8EF" }} />
+        <div style={{ position: "absolute", left: px(OPEN), top: T.y, width: px(CLOSE) - px(OPEN), height: 10, borderRadius: 5, background: `${C.sky}66` }} />
+        {[
+          { at: OPEN, label: "08:30 · doors open" },
+          { at: CLOSE, label: "18:00 · doors close" },
+        ].map((m) => (
+          <div key={m.label} style={{ position: "absolute", left: px(m.at), top: T.y + 30, transform: "translateX(-50%)", fontSize: 24, fontWeight: 600, color: C.mute, whiteSpace: "nowrap" }}>
+            {m.label}
+          </div>
+        ))}
+        {CALLS_AT.map((c) => {
+          const p = interpolate(h, [c, c + 0.35], [0, 1], clamp);
+          const out = c < OPEN || c >= CLOSE;
+          return (
+            <div
+              key={c}
+              style={{
+                position: "absolute",
+                left: px(c) - 9,
+                top: T.y - 38,
+                width: 18,
+                height: 18,
+                borderRadius: 9,
+                background: out ? C.orange : C.blue,
+                boxShadow: out ? `0 0 16px ${C.orange}` : "none",
+                opacity: p,
+                transform: `scale(${p}) translateY(${(1 - p) * 10}px)`,
+              }}
+            />
+          );
+        })}
+        <div style={{ position: "absolute", left: px(h) - 15, top: T.y - 10, width: 30, height: 30, borderRadius: 15, background: "#fff", border: `4px solid ${C.blue}`, boxShadow: `0 0 24px ${C.sky}` }} />
+      </div>
+      <Center style={{ justifyContent: "flex-start", paddingTop: 850 }}>
+        <Pill style={{ fontSize: 32 }}>
+          <Dot size={14} />
+          {open ? "Practice open · Adele answering" : h < OPEN ? "Before opening · Adele answering" : "After hours · Adele still answering"}
+        </Pill>
+      </Center>
+    </AbsoluteFill>
+  );
+};
+
+/* 52.5-59.5s  "I answer calls, WhatsApp and web chat, and book straight into your PMS." */
 const Hub: React.FC = () => {
   const f = useCurrentFrame();
   const cue = useCue();
   const cx = 860;
   const cy = 560;
   const chans = ["📞 Calls", "💬 WhatsApp", "🌐 Web chat", "✉️ Email", "📱 SMS"];
-  const pms = useIn(cue(39.0), 14);
+  const pms = useIn(cue(56.6), 14);
   const flow = (f % 40) / 40;
   return (
     <AbsoluteFill>
@@ -355,7 +607,7 @@ const Hub: React.FC = () => {
         <SymbolMark width={220} tone="white" />
       </div>
       {chans.map((c, i) => (
-        <Orbit key={c} label={c} i={i} n={chans.length} cx={cx} cy={cy} at={cue(36.4) + i * 7} />
+        <Orbit key={c} label={c} i={i} n={chans.length} cx={cx} cy={cy} at={cue(53.4) + i * 7} />
       ))}
       <svg style={{ position: "absolute", left: 0, top: 0 }} width={1920} height={1080}>
         <defs>
@@ -391,22 +643,22 @@ const Orbit: React.FC<{ label: string; i: number; n: number; cx: number; cy: num
   );
 };
 
-/* 42.5-50.5s  "I ask every patient to confirm. Your team only steps in if there's no reply." */
+/* 59.5-67s  "I ask every patient to confirm. Your team only steps in if there's no reply." */
 const Confirm: React.FC = () => {
   const cue = useCue();
   const rows = [
-    { at: cue(43.3), n: "Emma R.", d: "Thu 15:40 · Check-up", s: "Confirmed", ok: true },
-    { at: cue(43.8), n: "James T.", d: "Thu 16:20 · Hygiene", s: "Confirmed", ok: true },
-    { at: cue(44.3), n: "Aisha K.", d: "Fri 09:00 · Filling", s: "Confirmed", ok: true },
-    { at: cue(44.8), n: "Tom W.", d: "Fri 10:20 · Check-up", s: "Rebooked to Mon", ok: true },
-    { at: cue(45.9), n: "Priya S.", d: "Fri 11:40 · Crown fit", s: "No reply · team alerted", ok: false },
+    { at: cue(59.75), n: "Emma R.", d: "Thu 15:40 · Check-up", s: "Confirmed", ok: true },
+    { at: cue(60.2), n: "James T.", d: "Thu 16:20 · Hygiene", s: "Confirmed", ok: true },
+    { at: cue(60.65), n: "Aisha K.", d: "Fri 09:00 · Filling", s: "Confirmed", ok: true },
+    { at: cue(61.1), n: "Tom W.", d: "Fri 10:20 · Check-up", s: "Rebooked to Mon", ok: true },
+    { at: cue(63.2), n: "Priya S.", d: "Fri 11:40 · Crown fit", s: "No reply · team alerted", ok: false },
   ];
   return (
     <AbsoluteFill>
       <div style={{ position: "absolute", left: 170, top: 330, width: 700 }}>
-        <Words text="Every patient asked." at={cue(43.1)} every={5} size={92} style={{ justifyContent: "flex-start" }} />
+        <Words text="Every patient asked." at={cue(59.7)} every={5} size={92} style={{ justifyContent: "flex-start" }} />
         <div style={{ height: 30 }} />
-        <Words text="Only exceptions reach your team." at={cue(45.8)} every={4} size={56} weight={600} color={C.mute} gradientWords={["exceptions"]} style={{ justifyContent: "flex-start" }} />
+        <Words text="Only exceptions reach your team." at={cue(63.1)} every={4} size={56} weight={600} color={C.mute} gradientWords={["exceptions"]} style={{ justifyContent: "flex-start" }} />
       </div>
       <div style={{ position: "absolute", right: 170, top: 170 }}>
         <Rise at={0}>
@@ -452,7 +704,7 @@ const ConfirmRow: React.FC<{ at: number; n: string; d: string; s: string; ok: bo
   );
 };
 
-/* 50.5-57.5s  "And I work your patient list too. Missed enquiries, recalls, and lapsed patients." */
+/* 67-74s  "And I work your patient list too. Missed enquiries, recalls, and lapsed patients." */
 const ListScene: React.FC = () => {
   const f = useCurrentFrame();
   const cue = useCue();
@@ -464,7 +716,7 @@ const ListScene: React.FC = () => {
     "Following up treatment plans",
     "Filling a cancellation",
   ];
-  const act = stepper(f, [0, cue(52.9), cue(53.9), cue(54.6), cue(55.8), cue(56.6)], 10);
+  const act = stepper(f, [0, cue(69.7), cue(70.9), cue(71.7), cue(72.9)], 10);
   return (
     <AbsoluteFill>
       <Blob x={1500} y={300} size={520} intensity={0.35} />
@@ -478,21 +730,21 @@ const ListScene: React.FC = () => {
   );
 };
 
-/* 57.5-67s  "See me on a real practice day. Apply for a pilot place at adelecare.co.uk." */
+/* 80.5-90s  "See me on a real practice day. Apply for a pilot place at adelecare.co.uk." */
 const Cta: React.FC = () => {
   const f = useCurrentFrame();
   const cue = useCue();
   const typed = "adelecare.co.uk";
-  const n = Math.floor(interpolate(f, [cue(61.5), cue(63.0)], [0, typed.length], clamp));
-  const pill = useIn(cue(59.6), 14);
-  const press = interpolate(f, [cue(63.2), cue(63.45), cue(63.75)], [1, 0.9, 1], clamp);
-  const outro = useIn(cue(63.7), 16);
-  const url = useIn(cue(65.0), 16);
+  const n = Math.floor(interpolate(f, [cue(84.6), cue(86.4)], [0, typed.length], clamp));
+  const pill = useIn(cue(83.4), 14);
+  const press = interpolate(f, [cue(86.6), cue(86.85), cue(87.15)], [1, 0.9, 1], clamp);
+  const outro = useIn(cue(86.9), 16);
+  const url = useIn(cue(88.3), 16);
   return (
     <AbsoluteFill>
-      <Blob size={1000} intensity={interpolate(f, [0, 30, cue(63.5), cue(64.5)], [0.2, 0.85, 0.85, 0.3], clamp)} />
+      <Blob size={1000} intensity={interpolate(f, [0, 30, cue(86.7), cue(87.7)], [0.2, 0.85, 0.85, 0.3], clamp)} />
       <Center style={{ opacity: 1 - outro, filter: `blur(${outro * 14}px)` }}>
-        <Words text="See Adele on a real practice day." at={cue(58.2)} every={5} size={100} gradientWords={["real"]} style={{ maxWidth: 1800 }} />
+        <Words text="See Adele on a real practice day." at={cue(80.75)} every={5} size={100} gradientWords={["real"]} style={{ maxWidth: 1800 }} />
         <div style={{ height: 70 }} />
         <div
           style={{
@@ -518,9 +770,9 @@ const Cta: React.FC = () => {
           </div>
         </div>
       </Center>
-      {f >= cue(63.6) && (
+      {f >= cue(86.8) && (
         <Center>
-          <LogoReveal at={cue(63.7)} height={120} />
+          <LogoReveal at={cue(87.0)} height={120} />
           <div style={{ marginTop: 44, fontSize: 40, fontWeight: 600, color: C.mute, opacity: url, transform: `translateY(${(1 - url) * 16}px)` }}>adelecare.co.uk</div>
         </Center>
       )}
@@ -533,8 +785,10 @@ export const Scenes: Record<string, React.FC> = {
   problem: Problem,
   logo: LogoScene,
   call: Call,
+  whatsapp: WhatsApp,
   hub: Hub,
   confirm: Confirm,
   list: ListScene,
+  clock: Clock,
   cta: Cta,
 };
