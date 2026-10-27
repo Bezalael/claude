@@ -59,18 +59,20 @@ const Ringing: React.FC<{ at: number }> = ({ at }) => {
   );
 };
 
-/* 5.5-12.5s  "But the chair is full, the phone keeps ringing, and recalls slip when the team is stretched." */
+/* 5.5-12.5s  "But your team is with patients, calls go unanswered, and recalls slip through the cracks." */
 const Problem: React.FC = () => {
   const f = useCurrentFrame();
-  const cue = useCue();
-  const items = ["Chair is full", "Phone ringing", "Voicemail full", "Recall overdue", "Enquiry missed", "Team stretched"];
-  const act = stepper(f, [0, cue(7.8), cue(8.5), cue(9.4), cue(10.0), cue(10.65)], 9);
+  const words = useWordCues();
+  // "But your team is with patients, calls go unanswered, and recalls slip through the cracks."
+  const [, , team, , , , calls, , unanswered, , recalls, slip] = words("problem");
+  const items = ["Team is with patients", "Calls unanswered", "Voicemail full", "Recall overdue", "Enquiry missed"];
+  const act = stepper(f, [0, calls, unanswered + 9, recalls, slip], 9);
   const missed = [
-    { at: cue(6.3), t: "Missed call", s: "07700 900 412 · 09:12", icon: "✆", red: true },
-    { at: cue(7.8), t: "Missed call", s: "07700 900 877 · 09:14", icon: "✆", red: true },
-    { at: cue(8.5), t: "Voicemail (3)", s: "Mailbox nearly full", icon: "◉", red: false },
-    { at: cue(9.4), t: "Recall overdue", s: "38 patients this month", icon: "!", red: false },
-    { at: cue(10.1), t: "New enquiry", s: "Website form · no reply yet", icon: "!", red: false },
+    { at: team, t: "Missed call", s: "07700 900 412 · 09:12", icon: "✆", red: true },
+    { at: calls, t: "Missed call", s: "07700 900 877 · 09:14", icon: "✆", red: true },
+    { at: unanswered + 9, t: "Voicemail (3)", s: "Mailbox nearly full", icon: "◉", red: false },
+    { at: recalls, t: "Recall overdue", s: "38 patients this month", icon: "!", red: false },
+    { at: slip, t: "New enquiry", s: "Website form · no reply yet", icon: "!", red: false },
   ];
   return (
     <AbsoluteFill>
@@ -599,19 +601,22 @@ const Clock: React.FC = () => {
   );
 };
 
-/* 52.5-59.5s  "I answer calls, WhatsApp and web chat, and book straight into your PMS." */
+/* 52.5-59.5s  "I handle calls, WhatsApp, texts, web chat and email, and book straight into your PMS." */
 const Hub: React.FC = () => {
   const f = useCurrentFrame();
-  const cue = useCue();
   const cx = 860;
   const cy = 560;
-  const chans = ["📞 Calls", "💬 WhatsApp", "🌐 Web chat"];
-  const pms = useIn(cue(56.7), 14);
+  const words = useWordCues();
+  // "I handle calls, WhatsApp, texts, web chat and email, and book straight into your PMS."
+  const [, , calls, whatsapp, texts, web, , , email, , book] = words("hub");
+  const chans = ["📞 Calls", "💬 WhatsApp", "📱 Text", "🌐 Web chat", "✉️ Email"];
+  const chanAt = [calls, whatsapp, texts, web, email];
+  const pms = useIn(book, 14);
   const flow = (f % 40) / 40;
   return (
     <AbsoluteFill>
       <Rise at={0} style={{ position: "absolute", top: 90, width: "100%" }}>
-        <Words text="One assistant. Every conversation." at={4} every={5} size={80} gradientWords={["One"]} />
+        <Words text="AI-managed omnichannel communication" at={4} every={5} size={80} gradientWords={["AI-managed"]} />
       </Rise>
       <div
         style={{
@@ -630,11 +635,12 @@ const Hub: React.FC = () => {
         <SymbolMark width={220} tone="white" />
       </div>
       {chans.map((c, i) => (
-        <Orbit key={c} label={c} i={i} n={chans.length} cx={cx} cy={cy} at={cue(53.4) + i * 7} />
+        <Orbit key={c} label={c} i={i} n={chans.length} cx={cx} cy={cy} at={chanAt[i]} />
       ))}
       <svg style={{ position: "absolute", left: 0, top: 0 }} width={1920} height={1080}>
         <defs>
-          <linearGradient id="fl" x1="0" x2="1">
+          {/* user-space units: a bounding-box gradient paints nothing on a perfectly flat line */}
+          <linearGradient id="fl" gradientUnits="userSpaceOnUse" x1={cx + 220} y1={cy} x2={1450} y2={cy}>
             <stop offset="0" stopColor={C.sky} />
             <stop offset="1" stopColor={C.orange} />
           </linearGradient>

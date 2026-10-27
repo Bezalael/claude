@@ -40,14 +40,14 @@ export const framesBefore = (c: { frames: number; anchor?: number }) => Math.rou
 // `words` are each word's start (seconds into the line) from the generation's word timings; scenes cue off them.
 export const VO = [
   { file: "hook", at: 0.4, dur: 4.52, words: [0, 0.32, 0.96, 1.32, 1.52, 1.76, 2.8, 3.04, 3.24, 3.68, 3.84] },
-  { file: "problem", at: 5.8, dur: 6.19, words: [0, 0.2, 0.32, 0.72, 0.96, 1.76, 2.0, 2.24, 2.56, 3.36, 3.6, 4.16, 4.64, 4.76, 4.88, 5.2, 5.36] },
+  { file: "problem", at: 5.8, dur: 6.11, words: [0, 0.24, 0.48, 0.8, 0.96, 1.12, 2.24, 2.64, 2.8, 3.84, 4.08, 4.64, 4.96, 5.12, 5.28] },
   { file: "intro", at: 13.2, dur: 4.91, words: [0.46, 0.72, 0.88, 1.68, 2.0, 2.24, 3.12, 3.28, 3.68, 4.04] },
   { file: "call_a", at: 21.0, dur: 4.13, words: [0.08, 0.32, 0.88, 1.4, 2.24, 2.4, 2.56, 3.2, 3.36, 3.52, 3.6] },
   { file: "call_b", at: 25.4, dur: 3.55, words: [0, 0.76, 1.12, 1.44, 1.64, 2.4, 2.56, 2.72, 2.88, 3.12] },
   { file: "call_c", at: 29.3, dur: 5.96, words: [0.24, 0.64, 1.36, 1.68, 2.88, 3.04, 3.2, 3.32, 3.44, 3.6, 4.24, 4.96, 5.2, 5.36, 5.52] },
   { file: "call_d", at: 35.6, dur: 2.35, words: [0.16, 0.56, 1.44] },
   { file: "whatsapp", at: 39.3, dur: 6.77, words: [] as number[] },
-  { file: "hub", at: 53.2, dur: 5.25, words: [] as number[] },
+  { file: "hub", at: 52.85, dur: 6.61, words: [0, 0.32, 0.56, 1.28, 2.0, 2.72, 2.96, 3.36, 3.6, 4.36, 4.48, 4.72, 5.24, 5.44, 5.6] },
   { file: "confirm", at: 60.1, dur: 5.64, words: [] as number[] },
   { file: "list", at: 67.5, dur: 5.96, words: [] as number[] },
   { file: "clock", at: 74.6, dur: 5.41, words: [] as number[] },

@@ -42,11 +42,11 @@ python tools/render.py    # cached, verified build: out/adele-care.mp4 (master) 
 | Time | Scene | Voice |
 |---|---|---|
 | 0-5.5s | Kinetic headline, ringing phone | Your practice was built on care. Not on answering the phone. |
-| 5.5-12.5s | Rolling list of pressures, phone filling with missed calls | But the chair is full, the phone keeps ringing, and recalls slip when the team is stretched. |
+| 5.5-12.5s | Rolling list of pressures, phone filling with missed calls | But your team is with patients, calls go unanswered, and recalls slip through the cracks. |
 | 12.5-19.5s | The day shrinks into the app icon, which opens into the logo | Hi, I'm Adele. The AI receptionist for UK dental practices. |
 | 19.5-38.5s | A patient calls. Adele answers, checks the diary and books them, with a live transcript | (the call itself) |
 | 38.5-52.5s | A cancellation leaves a gap in tomorrow's diary; Adele offers it on WhatsApp to Sarah, who joined the waitlist on Monday, and moves her in | When a patient cancels, I offer the slot on WhatsApp to someone waiting for an earlier visit, and move them in. |
-| 52.5-59.5s | Calls, WhatsApp and web chat orbiting Adele, flowing into "Your PMS" | I answer calls, WhatsApp and web chat, and book straight into your PMS. |
+| 52.5-59.5s | "AI-managed omnichannel communication": calls, WhatsApp, text, web chat and email orbiting Adele, flowing into "Your PMS" | I handle calls, WhatsApp, texts, web chat and email, and book straight into your PMS. |
 | 59.5-67s | Confirmations list, one exception flagged | I ask every patient to confirm. Your team only steps in if there's no reply. |
 | 67-74s | Rolling list of outreach tasks | And I work your patient list too. Missed enquiries, recalls, and lapsed patients. |
 | 74-80.5s | Clock runs 07:12 to 22:48; calls answered before opening and after closing | Before the doors open, and long after they close, I'm still answering. |
