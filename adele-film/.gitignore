@@ -5,3 +5,4 @@ public/music.wav
 /.env.local
 .env*
 __pycache__/
+public/music-demo.wav
