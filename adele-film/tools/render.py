@@ -155,7 +155,9 @@ def main():
     for i, sid, first, last in t["segments"]:
         if i in wanted:
             remotion("render", bundle, comp, seg_path(i, sid), f"--frames={first}-{last}", "--muted",
-                     "--codec", "h264", "--crf", "10", "--pixel-format", "yuv420p", "--color-space", "bt709", "--concurrency", "4", *scale)
+                     "--codec", "h264", "--crf", "10", "--pixel-format", "yuv420p", "--color-space", "bt709", "--concurrency", "4",
+                     # lossless frame capture: Remotion's default JPEG (quality 80) visibly softens small UI text
+                     "--image-format", "png", *scale)
 
     stale_after = newest_mtime("src", "public")
     stale = [seg_path(i, sid) for i, sid, _, _ in t["segments"] if os.path.getmtime(os.path.join(ROOT, seg_path(i, sid))) < stale_after]
