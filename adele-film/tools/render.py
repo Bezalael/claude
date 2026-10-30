@@ -6,6 +6,7 @@ usage:
   python tools/render.py --all            re-render every segment
   python tools/render.py --audio          force a fresh audio mix (it is also redone automatically when audio inputs change)
   python tools/render.py --draft ...      the same at half resolution, in out/draft/
+  python tools/render.py --film demo ...  the same for the 4-minute demo film, in out/demo/
 
 The timeline is split just after each transition, so segment k holds scene k plus the transition
 into scene k+1. A scene therefore appears in its own segment and the one before it, and naming a
@@ -33,7 +34,16 @@ import subprocess
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-COMP = "AdeleCare"
+# Each film: its composition, timeline module, output folder and name, the files its audio mix depends on,
+# and its sharing copy (sized for WhatsApp, which plays videos up to 16 MB in the chat).
+FILMS = {
+    "short": dict(comp="AdeleCare", timeline="./src/timeline.ts", out="out", name="adele-care",
+                  audio_inputs=("public/voiceover", "public/sfx", "public/music.mp3", "src/timeline.ts", "src/AdeleVideo.tsx"),
+                  share=dict(height=1080, video="1150k", audio="128k")),
+    "demo": dict(comp="AdeleDemo", timeline="./src/demo/timeline.ts", out="out/demo", name="adele-care-demo",
+                 audio_inputs=("public/voiceover-demo", "public/sfx", "public/music-demo.mp3", "src/demo/timeline.ts", "src/demo/DemoVideo.tsx"),
+                 share=dict(height=720, video="400k", audio="80k")),
+}
 BROWSER = os.environ.get("REMOTION_BROWSER", "/opt/pw-browsers/chromium_headless_shell-1243/chrome-headless-shell-linux64/chrome-headless-shell")
 MIN_PSNR = 30.0  # dB; H.264 at CRF 18 scores 30-48 against a lossless still, a wrong frame far lower
 
@@ -48,9 +58,9 @@ def remotion(*args):
     return run(["npx", "remotion", *args, *extra, "--timeout", "120000", "--log", "error"])
 
 
-def timeline():
+def timeline(module):
     js = (
-        "import('./src/timeline.ts').then(m=>console.log(JSON.stringify({fps:m.FPS,total:m.TOTAL,"
+        f"import('{module}').then(m=>console.log(JSON.stringify({{fps:m.FPS,total:m.TOTAL,"
         "scenes:m.SCENES.map(s=>s.id),"
         "bounds:m.CUTS.map(c=>Math.round(c.at*m.FPS)-m.framesBefore(c)+c.frames)})))"
     )
@@ -72,9 +82,6 @@ def newest_mtime(*paths):
             for f in files:
                 newest = max(newest, os.path.getmtime(os.path.join(dirpath, f)))
     return newest
-
-
-AUDIO_INPUTS = ("public/voiceover", "public/sfx", "public/music.mp3", "src/timeline.ts", "src/AdeleVideo.tsx")
 
 
 def frame_count(path):
@@ -118,14 +125,17 @@ def psnr(a, b):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("scenes", nargs="*", help="scene ids to re-render (see SCENES in src/timeline.ts)")
+    ap.add_argument("scenes", nargs="*", help="scene ids to re-render (see SCENES in the film's timeline)")
+    ap.add_argument("--film", choices=FILMS, default="short", help="short (90s, src/timeline.ts) or demo (4 min, src/demo/timeline.ts)")
     ap.add_argument("--all", action="store_true")
     ap.add_argument("--audio", action="store_true", help="re-render only the audio")
     ap.add_argument("--draft", action="store_true", help="half resolution, in out/draft/")
     a = ap.parse_args()
 
-    t = timeline()
-    base = os.path.join("out", "draft" if a.draft else "")
+    film = FILMS[a.film]
+    comp = film["comp"]
+    t = timeline(film["timeline"])
+    base = os.path.join(film["out"], "draft" if a.draft else "")
     seg_dir = os.path.join(base, "segments")
     os.makedirs(os.path.join(ROOT, seg_dir), exist_ok=True)
     scale = ["--scale", "0.5"] if a.draft else []
@@ -144,7 +154,7 @@ def main():
             wanted.add(i)
     for i, sid, first, last in t["segments"]:
         if i in wanted:
-            remotion("render", bundle, COMP, seg_path(i, sid), f"--frames={first}-{last}", "--muted",
+            remotion("render", bundle, comp, seg_path(i, sid), f"--frames={first}-{last}", "--muted",
                      "--codec", "h264", "--crf", "10", "--pixel-format", "yuv420p", "--color-space", "bt709", "--concurrency", "4", *scale)
 
     stale_after = newest_mtime("src", "public")
@@ -152,8 +162,8 @@ def main():
 
     audio = os.path.join(seg_dir, "audio.wav")
     audio_abs = os.path.join(ROOT, audio)
-    if a.audio or not os.path.exists(audio_abs) or os.path.getmtime(audio_abs) < newest_mtime(*AUDIO_INPUTS):
-        remotion("render", bundle, COMP, audio, "--codec", "wav", "--concurrency", "4")
+    if a.audio or not os.path.exists(audio_abs) or os.path.getmtime(audio_abs) < newest_mtime(*film["audio_inputs"]):
+        remotion("render", bundle, comp, audio, "--codec", "wav", "--concurrency", "4")
     else:
         print("audio unchanged; reusing", audio)
 
@@ -171,7 +181,7 @@ def main():
     norm = (f"loudnorm={target}:measured_I={m['input_i']}:measured_TP={m['input_tp']}:measured_LRA={m['input_lra']}"
             f":measured_thresh={m['input_thresh']}:offset={m['target_offset']}:linear=true,aresample=48000,asetpts=N/SR/TB")
 
-    final = os.path.join(base, "adele-care.mp4")
+    final = os.path.join(base, f"{film['name']}.mp4")
     inputs = [os.path.join(ROOT, seg_path(i, sid)) for i, sid, _, _ in t["segments"]] + [audio_abs]
     if os.path.exists(os.path.join(ROOT, final)) and os.path.getmtime(os.path.join(ROOT, final)) > max(map(os.path.getmtime, inputs)):
         print("segments and audio unchanged since the last encode; reusing", final)
@@ -200,7 +210,7 @@ def main():
     decoded = extract_frames(os.path.join(ROOT, final), [g for f in checks for g in (f - 1, f, f + 1) if 0 <= g < n], tmp)
     refs = {f: os.path.join(tmp, f"still-{f}.png") for f in checks}
     with ThreadPoolExecutor(max_workers=4) as pool:  # each still pays a browser start-up, so run them side by side
-        list(pool.map(lambda f: remotion("still", bundle, COMP, refs[f], f"--frame={f}", *scale), checks))
+        list(pool.map(lambda f: remotion("still", bundle, comp, refs[f], f"--frame={f}", *scale), checks))
     for f in checks:
         ref = refs[f]
         here = psnr(decoded[f], ref)
@@ -227,22 +237,25 @@ def main():
         sys.exit("VERIFY FAILED:\n  " + "\n  ".join(problems))
     print("verified: exact length, all joins match direct renders")
     if not a.draft:
-        share(seg_dir, final)
+        share(seg_dir, final, os.path.join(film["out"], f"{film['name']}-share.mp4"), **film["share"])
 
 
-def share(seg_dir, final):
-    """A sharing copy under 15 MB: many app and phone previewers refuse videos over about 25 MB. Two-pass
-    encode from the mezzanine segments at the same profile and level, audio from the mastered film, and
-    the 90 kHz video clock Remotion's own exports use."""
-    out = os.path.join("out", "adele-care-share.mp4")
+def share(seg_dir, final, out, height, video, audio):
+    """A sharing copy under 15 MB: many app and phone previewers refuse videos over about 25 MB, and WhatsApp
+    plays up to 16 MB in the chat. Two-pass encode from the mezzanine segments at the same profile and level
+    (scaled down when the film is too long to fit at 1080p), audio from the mastered film, and the 90 kHz
+    video clock Remotion's own exports use."""
     log = os.path.join(seg_dir, "x264pass")
-    common = ["-c:v", "libx264", "-preset", "slow", "-b:v", "1150k", "-maxrate", "2300k", "-bufsize", "4600k",
+    kbps = int(video.rstrip("k"))
+    common = ["-c:v", "libx264", "-preset", "slow", "-b:v", video, "-maxrate", f"{2 * kbps}k", "-bufsize", f"{4 * kbps}k",
               "-profile:v", "high", "-level:v", "4.0", "-pix_fmt", "yuv420p", "-passlogfile", log,
               "-colorspace", "bt709", "-color_primaries", "bt709", "-color_trc", "bt709", "-color_range", "tv"]
+    if height != 1080:
+        common += ["-vf", f"scale=-2:{height}:flags=lanczos"]
     concat = ["-f", "concat", "-safe", "0", "-i", os.path.join(seg_dir, "list.txt")]
     run(["ffmpeg", "-v", "error", "-y", *concat, "-an", *common, "-pass", "1", "-f", "null", os.devnull])
     run(["ffmpeg", "-v", "error", "-y", *concat, "-i", final, "-map", "0:v", "-map", "1:a", *common, "-pass", "2",
-         "-c:a", "aac", "-b:a", "128k", "-ar", "48000", "-video_track_timescale", "90000", "-movflags", "+faststart", out])
+         "-c:a", "aac", "-b:a", audio, "-ar", "48000", "-video_track_timescale", "90000", "-movflags", "+faststart", out])
     size = os.path.getsize(os.path.join(ROOT, out))
     frames = frame_count(os.path.join(ROOT, out))
     print(f"{out}: {size / 1e6:.1f} MB, {frames} frames")

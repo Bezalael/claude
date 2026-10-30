@@ -19,7 +19,7 @@ const PRESENTATIONS = [
 const TRANSITIONS: Transition[] = CUTS.map((c, i) => ({ ...c, Pres: PRESENTATIONS[i] }));
 
 
-const SceneFrame: React.FC<{ index: number; dur: number; tin?: Transition; tout?: Transition; children: React.ReactNode }> = ({
+export const SceneFrame: React.FC<{ index: number; dur: number; tin?: Transition; tout?: Transition; children: React.ReactNode }> = ({
   index,
   dur,
   tin,

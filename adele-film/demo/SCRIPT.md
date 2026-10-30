@@ -1,4 +1,4 @@
-# Adele Care demo film: "One week at Riverside Dental" (script v4, about 4:30)
+# Adele Care demo film: "One week at Riverside Dental" (script v4, 4:08)
 
 For dentists and practice owners, to share instead of explaining Adele every time. Narrated by Adele in the
 first person (the voice of the 90-second film). No captions.
@@ -11,6 +11,9 @@ Act 3: Friday at five, the owner opens the weekly report, sees what the week was
 **Messages.** More revenue (recall, cancellations filled, confirmed appointments). WhatsApp first: where
 patients are, and cheaper than SMS for reminders. You stay in control, and your team only handles what needs
 a person. Full NHS compliance and cybersecurity protocols are planned.
+
+**Timing.** The section times below are approximate; exact scene, cut and voice times are in
+`src/demo/timeline.ts`.
 
 **Sources.** Every capability comes from the Adele Care brochure and the "Adele Care Phase 1 prototype"
 specification. Names, times and counts are illustrative (the counter is labelled "Example week"). No £ figures.
@@ -64,7 +67,7 @@ practice manager". Counter jumps to the weekend total.
 
 **6. MONDAY 9:12: WhatsApp first (1:50-2:16).** A website enquiry lands while the team is busy; within minutes
 Adele follows up on WhatsApp, and the brochure's exchange books Thursday 4:15 with a deposit. Then side by
-side: a long reminder by SMS, split into three charged parts, and the same reminder on WhatsApp as one message
+side: a long reminder by SMS, split into two charged parts, and the same reminder on WhatsApp as one message
 with a map link and Yes / No buttons. Counter +1.
 
 > A website enquiry comes in while everyone's busy. I follow it up within minutes, on WhatsApp, where your

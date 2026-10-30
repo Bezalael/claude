@@ -1,30 +1,36 @@
-"""Compose the 90s music bed from scratch (original, no licence needed).
+"""Compose the music beds from scratch (original, no licence needed).
 
-usage: python tools/music.py  -> public/music.wav
-then: ffmpeg -i public/music.wav -b:a 192k public/music.mp3
+usage: python tools/music.py [short|demo]  -> public/music.wav or public/music-demo.wav
+then: ffmpeg -i public/music.wav -b:a 192k public/music.mp3 (likewise for music-demo)
 
 Upbeat 120 BPM pop-house: four-on-the-floor kick, claps, offbeat hats,
 syncopated chord stabs and a bouncing bass, all pumping against the kick.
-Bars start at 0.5s, so the big moments (logo 12.5s, WhatsApp 38.5s, call to action 80.5s)
-land on downbeats and every other cut lands on a beat.
-Shape: build (0-5.5s), kick in (5.5s), full drop on the logo (12.5s), a soft bed under the
+Bars start at 0.5s, so every cut can land on a beat and the big moments on downbeats.
+Each film has a plan: its length, the section at each moment, and where the crashes, risers and
+snare rolls fall.
+
+short (90s): build (0-5.5s), kick in (5.5s), full drop on the logo (12.5s), a soft bed under the
 phone call (19.5-38.5s), full again (38.5s), breakdown under the clock (74-80.5s), final drop
 into the call to action (80.5s), ring out (87.5-90s).
+
+demo (247.5s, "One week at Riverside Dental"): a quiet breakdown under the empty reception, a soft bed
+under the problem, the drop on "I can." (22.5s), groove and soft beds alternating through the week
+(soft under the phone call and the confirmation walkthrough), full on Tuesday-Wednesday and Friday's
+recall, a breakdown for the weekly report that drops on "One week" (206.5s), and a final drop into the
+invitation (234.5s).
 """
 import numpy as np
 import soundfile as sf
 
+import sys
+
 SR = 44100
-DUR = 90.0
 BPM = 120
 BEAT = 60 / BPM
 BAR = 4 * BEAT
 OFFSET = 0.5  # first downbeat
-N = int(SR * DUR)
+N = 0  # samples in the film being composed; set by compose()
 rng = np.random.default_rng(11)
-
-music = np.zeros((N, 2))  # harmonic parts, pumped by the kick
-drums = np.zeros((N, 2))
 
 
 def hz(m):
@@ -136,7 +142,7 @@ BASS_RHYTHM = [0.5, 1.5, 2.5, 3.5]  # offbeat bounce
 HOOK = [(0, 81), (0.5, 83), (1, 85), (2, 81), (2.5, 78), (3, 76)]  # bell motif
 
 
-def section(t):
+def short_section(t):
     if t < 5.5:
         return "build"
     if t < 12.5:
@@ -150,100 +156,128 @@ def section(t):
     return "full"
 
 
-ROLL_INTO = [5.5, 19.5, 52.5, 59.5, 67.0]
-CRASHES = [12.5, 38.5, 80.5]
-RISERS = [10.5, 36.5, 78.5]  # 2s each, ending on a crash
+DEMO_SECTIONS = [  # (from, section), in order
+    (0, "break"), (10, "call"), (22.5, "full"), (32.5, "groove"), (47.5, "call"), (80.5, "groove"),
+    (128.5, "full"), (152.5, "call"), (176.5, "full"), (197.5, "break"), (206.5, "full"),
+    (212.5, "groove"), (234.5, "full"), (244.5, "end"),
+]
 
 
-kicks = []
-bar_i = 0
-t = OFFSET
-add(music, pad([57, 61, 64, 69], OFFSET + 0.2), 0, gain=0.25)
-BRIGHT = {"build": 0.0, "groove": 0.7, "full": 1.0, "call": 0.25, "break": 0.3}
-while t < DUR:
-    notes, root = prog[bar_i % 4]
-    # sections can change mid-bar (19.5s, 74s), so each event checks its own time
-    if section(t) in ("build", "break", "call") or section(t + 2 * BEAT) == "call":
-        add(music, pad([n - 12 for n in notes], BAR + 0.3), t, gain=0.32)
-    if section(t) == "end" or section(t + 2 * BEAT) == "end":
-        te = t if section(t) == "end" else t + 2 * BEAT
-        add(music, pad(notes, 3.2), te, gain=0.35)
-        add(music, stab(notes, 0.6, 1.0), te, gain=0.4)
+def demo_section(t):
+    current = DEMO_SECTIONS[0][1]
+    for start, name in DEMO_SECTIONS:
+        if t >= start:
+            current = name
+    return current
 
-    rhythm = STAB_RHYTHM_B if section(t) == "full" and bar_i % 2 else STAB_RHYTHM
-    for b in rhythm:
-        tb = t + b * BEAT
-        sec = section(tb)
-        if sec == "end":
-            continue
-        bright = min(1.0, tb / 5.5) * 0.6 if sec == "build" else BRIGHT[sec]
-        add(music, stab(notes, bright=bright), tb, pan=0.15 * np.sin(b * 3), gain=0.26 if sec == "call" else 0.38)
 
-    for b in BASS_RHYTHM:
-        if section(t + b * BEAT) in ("groove", "full"):
-            add(music, bass(root + (12 if b in (1.5, 3.5) else 0)), t + b * BEAT, gain=0.55)
-    if section(t) in ("groove", "full"):
-        add(music, bass(root, 0.12), t, gain=0.35)
+PLANS = {
+    "short": dict(dur=90.0, section=short_section, roll_into=[5.5, 19.5, 52.5, 59.5, 67.0], crashes=[12.5, 38.5, 80.5],
+                  risers=[10.5, 36.5, 78.5], end_kick=87.5, path="public/music.wav"),
+    "demo": dict(dur=247.5, section=demo_section, roll_into=[32.5, 80.5, 212.5], crashes=[22.5, 128.5, 176.5, 206.5, 234.5],
+                 risers=[20.5, 126.5, 174.5, 204.5, 232.5], end_kick=244.5, path="public/music-demo.wav"),
+}
 
-    if bar_i % 2 == 0:
-        for b, m in HOOK:
-            sec = section(t + b * BEAT)
-            if sec in ("full", "break", "call"):
-                add(music, bell(m), t + b * BEAT, pan=0.3, gain={"full": 0.10, "break": 0.16, "call": 0.06}[sec])
 
-    for b in range(4):
-        tb = t + b * BEAT
-        sec = section(tb)
-        if sec in ("groove", "full"):
-            add(drums, kick(), tb, gain=0.85)
-            kicks.append(tb)
-            if b in (1, 3):
-                add(drums, clap(), tb, pan=0.05, gain=0.35)
-            add(drums, noise_hit(0.18, 22), tb + BEAT / 2, pan=0.35, gain=0.13)  # open hat
-        if sec in ("build", "groove", "full", "call"):
-            for h in range(4):
-                if h != 2 or sec in ("build", "call"):
-                    g = 0.05 if h % 2 else 0.035
-                    add(drums, noise_hit(0.04, 90), tb + h * BEAT / 4, pan=-0.35, gain=g * (0.6 if sec == "call" else 1))
-        if sec == "build" and b in (1, 3) and tb > 3:
-            add(drums, clap(), tb, gain=0.18)
-    t += BAR
-    bar_i += 1
+def compose(dur, section, roll_into, crashes, risers, end_kick, path):
+    global N, rng
+    N = int(SR * dur)
+    rng = np.random.default_rng(11)
+    music = np.zeros((N, 2))  # harmonic parts, pumped by the kick
+    drums = np.zeros((N, 2))
+    kicks = []
+    bar_i = 0
+    t = OFFSET
+    add(music, pad([57, 61, 64, 69], OFFSET + 0.2), 0, gain=0.25)
+    BRIGHT = {"build": 0.0, "groove": 0.7, "full": 1.0, "call": 0.25, "break": 0.3}
+    while t < dur:
+        notes, root = prog[bar_i % 4]
+        # sections can change mid-bar (the short film's 19.5s and 74s), so each event checks its own time
+        if section(t) in ("build", "break", "call") or section(t + 2 * BEAT) == "call":
+            add(music, pad([n - 12 for n in notes], BAR + 0.3), t, gain=0.32)
+        if section(t) == "end" or section(t + 2 * BEAT) == "end":
+            te = t if section(t) == "end" else t + 2 * BEAT
+            add(music, pad(notes, 3.2), te, gain=0.35)
+            add(music, stab(notes, 0.6, 1.0), te, gain=0.4)
 
-for c in ROLL_INTO:  # snare roll over the two beats before the cut
-    for k in range(8):
-        add(drums, clap(), c - 2 * BEAT + k * BEAT / 4, gain=0.08 + 0.03 * k)
-for c in CRASHES:
-    add(drums, crash(), c, gain=0.35)
-for r in RISERS:
-    add(drums, riser(2.0), r, gain=0.38)
-add(drums, kick(), 87.5, gain=0.9)
+        rhythm = STAB_RHYTHM_B if section(t) == "full" and bar_i % 2 else STAB_RHYTHM
+        for b in rhythm:
+            tb = t + b * BEAT
+            sec = section(tb)
+            if sec == "end":
+                continue
+            bright = min(1.0, tb / 5.5) * 0.6 if sec == "build" else BRIGHT[sec]
+            add(music, stab(notes, bright=bright), tb, pan=0.15 * np.sin(b * 3), gain=0.26 if sec == "call" else 0.38)
 
-# sidechain pump: duck the harmonic parts after every kick
-t_axis = np.arange(N) / SR
-pump = np.ones(N)
-for k in kicks:
-    i = int(k * SR)
-    j = min(N, i + int(BEAT * SR))
-    x = (t_axis[i:j] - k) / BEAT
-    pump[i:j] = np.minimum(pump[i:j], 0.35 + 0.65 * np.clip(x / 0.6, 0, 1) ** 1.5)
-music *= pump[:, None]
+        for b in BASS_RHYTHM:
+            if section(t + b * BEAT) in ("groove", "full"):
+                add(music, bass(root + (12 if b in (1.5, 3.5) else 0)), t + b * BEAT, gain=0.55)
+        if section(t) in ("groove", "full"):
+            add(music, bass(root, 0.12), t, gain=0.35)
 
-# short room reverb on the harmonic parts
-ir_len = int(1.2 * SR)
-ti = np.arange(ir_len) / SR
-wet = np.zeros_like(music)
-for c in range(2):
-    ir = rng.standard_normal(ir_len) * np.exp(-ti * 5)
-    ir[: int(0.015 * SR)] = 0
-    nfft = 1 << (N + ir_len - 1).bit_length()
-    wet[:, c] = np.fft.irfft(np.fft.rfft(music[:, c], nfft) * np.fft.rfft(ir, nfft), nfft)[:N]
-wet *= np.max(np.abs(music)) / (np.max(np.abs(wet)) + 1e-9)
+        if bar_i % 2 == 0:
+            for b, m in HOOK:
+                sec = section(t + b * BEAT)
+                if sec in ("full", "break", "call"):
+                    add(music, bell(m), t + b * BEAT, pan=0.3, gain={"full": 0.10, "break": 0.16, "call": 0.06}[sec])
 
-out = music + 0.25 * wet + drums
-out *= np.minimum(1, t_axis / 0.5)[:, None] * np.clip((DUR - t_axis) / 2.5, 0, 1)[:, None]
-out = np.tanh(out / np.max(np.abs(out)) * 1.6)
-out /= np.max(np.abs(out))
-out *= 10 ** (-1 / 20)
-sf.write("public/music.wav", out.astype(np.float32), SR)
-print("music.wav written", out.shape)
+        for b in range(4):
+            tb = t + b * BEAT
+            sec = section(tb)
+            if sec in ("groove", "full"):
+                add(drums, kick(), tb, gain=0.85)
+                kicks.append(tb)
+                if b in (1, 3):
+                    add(drums, clap(), tb, pan=0.05, gain=0.35)
+                add(drums, noise_hit(0.18, 22), tb + BEAT / 2, pan=0.35, gain=0.13)  # open hat
+            if sec in ("build", "groove", "full", "call"):
+                for h in range(4):
+                    if h != 2 or sec in ("build", "call"):
+                        g = 0.05 if h % 2 else 0.035
+                        add(drums, noise_hit(0.04, 90), tb + h * BEAT / 4, pan=-0.35, gain=g * (0.6 if sec == "call" else 1))
+            if sec == "build" and b in (1, 3) and tb > 3:
+                add(drums, clap(), tb, gain=0.18)
+        t += BAR
+        bar_i += 1
+
+    for c in roll_into:  # snare roll over the two beats before the cut
+        for k in range(8):
+            add(drums, clap(), c - 2 * BEAT + k * BEAT / 4, gain=0.08 + 0.03 * k)
+    for c in crashes:
+        add(drums, crash(), c, gain=0.35)
+    for r in risers:
+        add(drums, riser(2.0), r, gain=0.38)
+    add(drums, kick(), end_kick, gain=0.9)
+
+    # sidechain pump: duck the harmonic parts after every kick
+    t_axis = np.arange(N) / SR
+    pump = np.ones(N)
+    for k in kicks:
+        i = int(k * SR)
+        j = min(N, i + int(BEAT * SR))
+        x = (t_axis[i:j] - k) / BEAT
+        pump[i:j] = np.minimum(pump[i:j], 0.35 + 0.65 * np.clip(x / 0.6, 0, 1) ** 1.5)
+    music *= pump[:, None]
+
+    # short room reverb on the harmonic parts
+    ir_len = int(1.2 * SR)
+    ti = np.arange(ir_len) / SR
+    wet = np.zeros_like(music)
+    for c in range(2):
+        ir = rng.standard_normal(ir_len) * np.exp(-ti * 5)
+        ir[: int(0.015 * SR)] = 0
+        nfft = 1 << (N + ir_len - 1).bit_length()
+        wet[:, c] = np.fft.irfft(np.fft.rfft(music[:, c], nfft) * np.fft.rfft(ir, nfft), nfft)[:N]
+    wet *= np.max(np.abs(music)) / (np.max(np.abs(wet)) + 1e-9)
+
+    out = music + 0.25 * wet + drums
+    out *= np.minimum(1, t_axis / 0.5)[:, None] * np.clip((dur - t_axis) / 2.5, 0, 1)[:, None]
+    out = np.tanh(out / np.max(np.abs(out)) * 1.6)
+    out /= np.max(np.abs(out))
+    out *= 10 ** (-1 / 20)
+    sf.write(path, out.astype(np.float32), SR)
+    print(path, "written", out.shape)
+
+
+if __name__ == "__main__":
+    compose(**PLANS[sys.argv[1] if len(sys.argv) > 1 else "short"])

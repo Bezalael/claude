@@ -15,6 +15,23 @@ python tools/render.py    # cached, verified build: out/adele-care.mp4 (master) 
 - `adele-care-90s.mp4`: the film to share (14.6 MB, 1080p H.264 High 4.0). Use this one for apps, phones and messages.
 - `adele-care-90s-master.mp4`: the high-quality master (27 MB) for websites and editing.
 
+## The 4-minute demo film
+
+"One week at Riverside Dental" (4:08) walks a practice owner through a week of Adele's workflows: the 8am
+new patient call, the Monday portal handover, WhatsApp-first follow-up and reminders, a cancellation filled
+from the waitlist, a sick hygienist's list moved, two-step confirmation, recall day, the weekly report,
+control and compliance. Script, sources and accuracy notes: `demo/SCRIPT.md`; voice lines and word timings:
+`demo/vo.json`.
+
+```
+python tools/music.py demo              # public/music-demo.wav, then ffmpeg to public/music-demo.mp3
+python tools/render.py --film demo      # out/demo/adele-care-demo.mp4 (master) and out/demo/adele-care-demo-share.mp4 (720p, under 15 MB)
+```
+
+- `adele-care-demo.mp4`: the full-quality master (1080p).
+- `adele-care-demo-whatsapp.mp4`: 720p, under 15 MB, so it plays in a WhatsApp chat.
+- Code: `src/demo/` (timeline, scenes, composition `AdeleDemo`), reusing the 90-second film's components and transitions.
+
 ## Structure
 
 - `src/timeline.ts`: scene windows, voice line starts and sound effects (seconds). Change timings here.

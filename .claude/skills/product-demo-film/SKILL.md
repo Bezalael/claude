@@ -60,6 +60,16 @@ timeline, transitions, render tool and audio tools are all reusable. Read `adele
 5. `python3 tools/render.py <scene ids>` re-renders only the segments showing those scenes, mixes
    audio, encodes once and verifies. Run it in the background (10-20 min on 4 cores).
 
+## Longer demo films
+
+- `adele-film/src/demo/` is a 4-minute story-led demo built from the same parts: a chapter label per day,
+  a running counter that pays off in the final report, and one worked example per workflow. Copy its
+  pattern for any film over 2 minutes: one protagonist or setting, a problem in act 1, examples in act 2,
+  the payoff and invitation in act 3.
+- `tools/music.py` takes a plan per film (`PLANS`): sections, crashes, risers and rolls. Add a plan rather
+  than copying the script.
+- `tools/render.py --film demo` renders it; add new films to `FILMS` in that file.
+
 ## Rendering and verification (`tools/render.py`)
 
 - Segment cache split after each transition; segments are CRF 10 mezzanine files, the film is one

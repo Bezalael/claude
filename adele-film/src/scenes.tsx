@@ -17,7 +17,7 @@ const useWordCues = () => {
   };
 };
 
-const Center: React.FC<{ children: React.ReactNode; style?: React.CSSProperties }> = ({ children, style }) => (
+export const Center: React.FC<{ children: React.ReactNode; style?: React.CSSProperties }> = ({ children, style }) => (
   <AbsoluteFill style={{ alignItems: "center", justifyContent: "center", ...style }}>{children}</AbsoluteFill>
 );
 
@@ -250,14 +250,14 @@ const Call: React.FC = () => {
   );
 };
 
-const Spinner: React.FC<{ done: boolean }> = ({ done }) => {
+export const Spinner: React.FC<{ done: boolean }> = ({ done }) => {
   const f = useCurrentFrame();
   if (done) return <span style={{ color: "#127A43", fontWeight: 800 }}>✓</span>;
   return <div style={{ width: 20, height: 20, borderRadius: 10, border: `3px solid ${C.sky}44`, borderTopColor: C.blue, transform: `rotate(${f * 12}deg)` }} />;
 };
 
 /** Live transcript bubble: each word appears as it is spoken (`words` holds the frame of each word). */
-const TypedBubble: React.FC<{ at: number; words: number[]; who: "adele" | "patient"; text: string }> = ({ at, words: cues, who, text }) => {
+export const TypedBubble: React.FC<{ at: number; words: number[]; who: "adele" | "patient"; text: string }> = ({ at, words: cues, who, text }) => {
   const f = useCurrentFrame();
   const words = text.split(" ");
   const n = cues.filter((c) => f >= c).length;
@@ -275,7 +275,7 @@ const TypedBubble: React.FC<{ at: number; words: number[]; who: "adele" | "patie
 };
 
 /** Incoming call screen; the accept button pulses and Adele picks up. */
-const IncomingCall: React.FC<{ answerAt: number }> = ({ answerAt }) => {
+export const IncomingCall: React.FC<{ answerAt: number }> = ({ answerAt }) => {
   const f = useCurrentFrame();
   const press = interpolate(f, [answerAt - 8, answerAt - 3, answerAt], [1, 0.86, 1], clamp);
   return (
@@ -338,7 +338,7 @@ const OnCall: React.FC<{ speaking?: string; since: number; booked: number }> = (
 };
 
 /* 38.5-52.5s  "When a patient cancels, I offer the slot on WhatsApp to someone waiting for an earlier visit, and move them in." */
-const WA = { header: "#075E54", accent: "#128C7E", wall: "#EFE7DD", out: "#DCF8C6", tick: "#34B7F1" };
+export const WA = { header: "#075E54", accent: "#128C7E", wall: "#EFE7DD", out: "#DCF8C6", tick: "#34B7F1" };
 const CANCEL_AT = 38.9;
 const OFFER_AT = 41.6;
 const TYPING_AT = 43.3;
@@ -500,11 +500,11 @@ const WhatsAppChat: React.FC = () => {
   );
 };
 
-const DayChip: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+export const DayChip: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <div style={{ alignSelf: "center", background: "#E1F2FB", color: "#54656F", fontSize: 17, padding: "5px 14px", borderRadius: 10 }}>{children}</div>
 );
 
-const WaBubble: React.FC<{ out?: boolean; at: number; time: string; read?: boolean; children: React.ReactNode }> = ({ out, at, time, read, children }) => {
+export const WaBubble: React.FC<{ out?: boolean; at: number; time: string; read?: boolean; children: React.ReactNode }> = ({ out, at, time, read, children }) => {
   const p = useIn(at, 14);
   if (p <= 0.001) return null;
   return (
