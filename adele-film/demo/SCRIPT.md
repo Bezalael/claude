@@ -107,7 +107,7 @@ lapsed patient gets the offer you set.
 ## Act 3: what the week was worth (3:46-4:30)
 
 **11. FRIDAY 17:00: the weekly report (3:46-4:04).** The owner's dashboard opens: New patient enquiries by
-channel · Bookings converted · Chase success rate · Revenue generated. The counter settles on the week's total.
+channel · Bookings made (booked or rebooked by Adele, matching the counter) · Chase success rate · Revenue generated. The counter settles on the week's total.
 
 > Five o'clock on Friday. Every enquiry, every booking converted, and the revenue I generated, in one report.
 > One week. Every call answered. More chairs filled.

@@ -1025,8 +1025,8 @@ const Report: React.FC = () => {
                     </div>
                   </div>
                   <div style={tile(t2)}>
-                    <div style={{ fontSize: 28, fontWeight: 800 }}>Bookings converted</div>
-                    <div style={{ fontSize: 21, color: C.mute }}>Enquiries that became appointments</div>
+                    <div style={{ fontSize: 28, fontWeight: 800 }}>Bookings made</div>
+                    <div style={{ fontSize: 21, color: C.mute }}>Booked or rebooked by Adele this week</div>
                     <div style={{ fontSize: 120, fontWeight: 800, letterSpacing: -5, marginTop: 10, color: C.navy }}>32</div>
                   </div>
                   <div style={tile(t3)}>

@@ -42,7 +42,7 @@ FILMS = {
                   share=dict(height=1080, video="1150k", audio="128k")),
     "demo": dict(comp="AdeleDemo", timeline="./src/demo/timeline.ts", out="out/demo", name="adele-care-demo",
                  audio_inputs=("public/voiceover-demo", "public/sfx", "public/music-demo.mp3", "src/demo/timeline.ts", "src/demo/DemoVideo.tsx"),
-                 share=dict(height=720, video="400k", audio="80k")),
+                 share=dict(height=720, video="360k", audio="80k")),
 }
 BROWSER = os.environ.get("REMOTION_BROWSER", "/opt/pw-browsers/chromium_headless_shell-1243/chrome-headless-shell-linux64/chrome-headless-shell")
 MIN_PSNR = 30.0  # dB; H.264 at CRF 18 scores 30-48 against a lossless still, a wrong frame far lower
