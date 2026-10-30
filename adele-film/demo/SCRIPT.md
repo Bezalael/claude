@@ -47,7 +47,7 @@ answered. Live call with transcript; the diary fills; cards: Registered · Added
 > Adele (call): Good morning, Riverside Dental, this is Adele. How can I help?
 > Patient (call): Hi, I've just moved to the area. Can I register and book a check-up?
 > Adele (call): Of course. I have Wednesday at nine thirty. Shall I book that?
-> Patient (call): Yes please.
+> Patient (call): Yes please, perfect.
 > Adele (call): Done. I'll send you a secure link for the deposit, with directions and parking.
 >
 > Narration: Registered, booked, and the deposit taken, before reception opens.
