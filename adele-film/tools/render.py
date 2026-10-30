@@ -102,6 +102,19 @@ def audio_gaps(path):
     return [round(a[1], 3) for a, step in zip(packets, steps) if step != frame]
 
 
+def joined(segments, seg_path, height=1080):
+    """ffmpeg inputs and filtergraph that join the segments frame-exactly into [v]. Each segment is rendered one
+    frame past its end (Remotion can capture the last frame of a render wrongly), so trim keeps exactly its own
+    frames; a segment rendered without the extra frame passes through unchanged."""
+    inputs, chains = [], []
+    for k, (i, sid, first, last) in enumerate(segments):
+        inputs += ["-i", seg_path(i, sid)]
+        chains.append(f"[{k}:v]trim=end_frame={last - first + 1},setpts=PTS-STARTPTS[v{k}]")
+    scale = f",scale=-2:{height}:flags=lanczos" if height != 1080 else ""
+    graph = ";".join(chains) + ";" + "".join(f"[v{k}]" for k in range(len(segments))) + f"concat=n={len(segments)}:v=1:a=0{scale}[v]"
+    return inputs, graph
+
+
 def extract_frames(video, frames, out_dir):
     """Decode `video` once and save the given frame indices as PNGs (BT.709, full range). Returns {frame: path}."""
     frames = sorted(set(frames))
@@ -154,7 +167,8 @@ def main():
             wanted.add(i)
     for i, sid, first, last in t["segments"]:
         if i in wanted:
-            remotion("render", bundle, comp, seg_path(i, sid), f"--frames={first}-{last}", "--muted",
+            end = min(last + 1, t["total"] - 1)  # one spare frame, trimmed off when joining (see joined())
+            remotion("render", bundle, comp, seg_path(i, sid), f"--frames={first}-{end}", "--muted",
                      "--codec", "h264", "--crf", "10", "--pixel-format", "yuv420p", "--color-space", "bt709", "--concurrency", "4",
                      # lossless frame capture: Remotion's default JPEG (quality 80) visibly softens small UI text
                      "--image-format", "png", *scale)
@@ -168,10 +182,6 @@ def main():
         remotion("render", bundle, comp, audio, "--codec", "wav", "--concurrency", "4")
     else:
         print("audio unchanged; reusing", audio)
-
-    with open(os.path.join(ROOT, seg_dir, "list.txt"), "w") as fh:
-        for i, sid, _, _ in t["segments"]:
-            fh.write(f"file '{os.path.basename(seg_path(i, sid))}'\n")
 
     # Two-pass loudness mastering for online video: -16 LUFS integrated, -1.5 dBTP.
     target = "I=-16:TP=-1.5:LRA=11"
@@ -188,8 +198,9 @@ def main():
     if os.path.exists(os.path.join(ROOT, final)) and os.path.getmtime(os.path.join(ROOT, final)) > max(map(os.path.getmtime, inputs)):
         print("segments and audio unchanged since the last encode; reusing", final)
     else:
-        run(["ffmpeg", "-v", "error", "-y", "-f", "concat", "-safe", "0", "-i", os.path.join(seg_dir, "list.txt"), "-i", audio,
-             "-map", "0:v", "-map", "1:a", "-c:v", "libx264", "-preset", "slow", "-crf", "18", "-pix_fmt", "yuv420p",
+        seg_inputs, graph = joined(t["segments"], seg_path)
+        run(["ffmpeg", "-v", "error", "-y", *seg_inputs, "-i", audio, "-filter_complex", graph,
+             "-map", "[v]", "-map", f"{len(t['segments'])}:a", "-c:v", "libx264", "-preset", "slow", "-crf", "18", "-pix_fmt", "yuv420p",
              # level 4.0 keeps 1080p playable on phones and in-app players; unconstrained, the slow
              # preset's extra reference frames push it to level 5.0, which many devices refuse
              "-profile:v", "high", "-level:v", "4.0",
@@ -239,10 +250,10 @@ def main():
         sys.exit("VERIFY FAILED:\n  " + "\n  ".join(problems))
     print("verified: exact length, all joins match direct renders")
     if not a.draft:
-        share(seg_dir, final, os.path.join(film["out"], f"{film['name']}-share.mp4"), **film["share"])
+        share(t["segments"], seg_path, seg_dir, final, os.path.join(film["out"], f"{film['name']}-share.mp4"), **film["share"])
 
 
-def share(seg_dir, final, out, height, video, audio):
+def share(segments, seg_path, seg_dir, final, out, height, video, audio):
     """A sharing copy under 15 MB: many app and phone previewers refuse videos over about 25 MB, and WhatsApp
     plays up to 16 MB in the chat. Two-pass encode from the mezzanine segments at the same profile and level
     (scaled down when the film is too long to fit at 1080p), audio from the mastered film, and the 90 kHz
@@ -252,11 +263,9 @@ def share(seg_dir, final, out, height, video, audio):
     common = ["-c:v", "libx264", "-preset", "slow", "-b:v", video, "-maxrate", f"{2 * kbps}k", "-bufsize", f"{4 * kbps}k",
               "-profile:v", "high", "-level:v", "4.0", "-pix_fmt", "yuv420p", "-passlogfile", log,
               "-colorspace", "bt709", "-color_primaries", "bt709", "-color_trc", "bt709", "-color_range", "tv"]
-    if height != 1080:
-        common += ["-vf", f"scale=-2:{height}:flags=lanczos"]
-    concat = ["-f", "concat", "-safe", "0", "-i", os.path.join(seg_dir, "list.txt")]
-    run(["ffmpeg", "-v", "error", "-y", *concat, "-an", *common, "-pass", "1", "-f", "null", os.devnull])
-    run(["ffmpeg", "-v", "error", "-y", *concat, "-i", final, "-map", "0:v", "-map", "1:a", *common, "-pass", "2",
+    seg_inputs, graph = joined(segments, seg_path, height)
+    run(["ffmpeg", "-v", "error", "-y", *seg_inputs, "-filter_complex", graph, "-map", "[v]", "-an", *common, "-pass", "1", "-f", "null", os.devnull])
+    run(["ffmpeg", "-v", "error", "-y", *seg_inputs, "-i", final, "-filter_complex", graph, "-map", "[v]", "-map", f"{len(segments)}:a", *common, "-pass", "2",
          "-c:a", "aac", "-b:a", audio, "-ar", "48000", "-video_track_timescale", "90000", "-movflags", "+faststart", out])
     size = os.path.getsize(os.path.join(ROOT, out))
     frames = frame_count(os.path.join(ROOT, out))
